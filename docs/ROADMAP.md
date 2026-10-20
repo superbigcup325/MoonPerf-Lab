@@ -651,10 +651,11 @@ work. If the hackathon deadline is earlier, deliver P1.0–P1.3 and defer P1.4.
 ## First verifiable task
 
 **P1.0-A: make the current oracle produce one green artifact, or prove the host
-cannot.** Fix the two blocking defects in `mpf/runner.py` (absolute
-implementation paths; reference-first correctness), add a regression test for
-each, run `mpf run` on a controlled host, and record either an `ok` artifact or
-a documented `unstable`/host verdict. This is the first Python work allowed
+cannot.** **Status: done 2026-10-20** — see the P1.0-A result above. Fix the
+two blocking defects in `mpf/runner.py` (absolute implementation paths;
+reference-first correctness), add a regression test for each, run `mpf run` on
+a controlled host, and record either an `ok` artifact or a documented
+`unstable`/host verdict. This is the first Python work allowed
 before the port; it validates the experiment contract, the host profile and the
 measurement gate that the MoonBit core must reproduce. The small P1.0-B
 contract checks are the only other Python work; the Python architecture is not
