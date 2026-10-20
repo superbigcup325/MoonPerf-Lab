@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; P1.0-A, dataset, manifest and list/validate are in MoonBit | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; P1.0-A, dataset, manifest, stats, host primitive and list/validate are in MoonBit | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -56,9 +56,9 @@ dependency that has not been proven on this toolchain.
 | MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
 | Rust reference implementation | Partial | `workloads/numeric-scan/implementations/rust/` | CV above gate on this host; setup semantics differ |
 | C reference | Not started | Workload README mentions it | Deferred to P2 |
-| MoonBit framework core | Partial | `core/dataset`, `core/manifest`, `core/measure`, `cli`; golden SHA, parity, list/validate, stats | Report, artifact and runner still to port |
+| MoonBit framework core | Partial | `core/dataset`, `core/manifest`, `core/measure`, `core/host`, `cli`; golden SHA, parity, list/validate, stats, group-kill host | Experiment runner, artifact and report still to port |
 | Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test; port the cache/identity path |
-| Process-group timeout | Partial | Python uses `start_new_session`; MoonBit async timeout leaves grandchildren; `setsid`/`kill` workaround verified | Implement it in the MoonBit core with an orphan test |
+| Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; orphan test passes | Wire it into the experiment runner |
 | Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
 | Controlled measurement host | Partial | `K=50` on the `powersave` laptop: CV 2.07 % Rust, 2.36 % MoonBit; `ok` oracle artifact under `results/tmp/` | Still not a controlled profile; setup/clean/hoisting checks pending |
 | CI | Partial | Python spec tests only | No MoonBit/Rust build, no correctness fixtures |
@@ -264,6 +264,11 @@ place. Report and artifact are still to port; all MoonBit tests pass.
 **Estimate:** 5–7 days.
 
 ### P1.2 · Host primitive and runner
+
+**P1.2-A (done 2026-10-20):** the MoonBit host primitive runs one child through
+`setsid -w`, enforces a timeout, kills the process group on expiry, reaps the
+child and returns exit code/wall time/stdout/stderr paths. The orphan test
+passes; no `sleep` survives a 200 ms timeout.
 
 - Implement the process primitive with a new process group, timeout,
   process-group kill, exit-code and stdout/stderr capture. Linux MVP:
@@ -684,7 +689,8 @@ report/artifact port.
   to `K=50`; generalized the result harness/setup contract and added
   `build_dir`; added the MoonBit dataset + CLI slice with a passing 1M golden
   hash and byte parity against the Python generator; added the typed manifest
-  model, summary statistics and MoonBit `list`/`validate`.
+  model, summary statistics, MoonBit `list`/`validate` and the process-group
+  host primitive with an orphan test.
 
 ## Documentation change log (2026-10-20)
 

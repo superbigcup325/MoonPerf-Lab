@@ -29,7 +29,7 @@ deliverable.
 ## Target module map
 
 ```
-moonperf/                         MoonBit module (created in P1.1; dataset, manifest, stats, CLI)
+moonperf/                         MoonBit module (created in P1.1; dataset, manifest, stats, host, CLI)
   moon.mod
   core/
     manifest/                     workload.toml + adapter.toml -> typed model
@@ -84,7 +84,7 @@ function of the artifact. Nothing in the report is typed by hand.
 | --- | --- | --- | --- |
 | Manifest parsing and semantic validation | `moonperf/core/manifest` | `mpf/specs.py` + `moonperf/core/manifest` (partial) | No |
 | Dataset generation and identity | `moonperf/core/dataset` | `mpf/dataset.py` + `moonperf/core/dataset` (parity done) | No |
-| Build/run/timeout/exit-code capture | `moonperf/core/host` | `mpf/runner.py` | Only the OS primitive (see boundaries) |
+| Build/run/timeout/exit-code capture | `moonperf/core/host` | `mpf/runner.py` + `moonperf/core/host` (partial) | Only the OS primitive (see boundaries) |
 | Correctness gate | `moonperf/core/verify` | `mpf/runner.py` | No |
 | Samples, statistics, CV, setup fraction | `moonperf/core/measure` | `mpf/runner.py` + `moonperf/core/measure` (partial) | No |
 | Result artifact assembly and validation | `moonperf/core/artifact` | `mpf/runner.py` | No (cross-check may be Python) |
@@ -121,7 +121,7 @@ toolchain versions.
 | Spawn child, wait, exit code | Verified | `moonbitlang/async/process` | `spawn_orphan` + `wait_pid`; exit code 3 observed |
 | Timeout with cancellation | Verified | `@async.with_timeout_opt` | 300 ms timeout returned `None` at ~301 ms |
 | Capture stdout/stderr | Verified | `@process.redirect_to_file` | File capture worked; create a fresh redirect per invocation |
-| Process-group timeout | **Not provided by MoonBit** | `setsid -w` + `kill -KILL -<pid>` | Direct async timeout leaves grandchildren alive (two `sleep` processes survived a 300 ms timeout). The `setsid` wrapper made PID = PGID = SID; `kill -KILL -- -<pid>` killed the whole group. |
+| Process-group timeout | Implemented in `moonperf/core/host` | `setsid -w` + `kill -KILL -<pid>` | Direct async timeout leaves grandchildren alive; the MoonBit host wrapper kills the group and the orphan test passes. |
 | SHA-256 | Verified | `moonbitlang/x/crypto` | `@crypto.sha256` + `bytes_to_hex_string`; the 1M-element numeric-scan dataset matches `fa4970…` |
 | JSON Schema validation | **Not yet verified** | Candidate packages only | `colmugx/json-schema`, `moonbitstack/moonschema`; a targeted validator plus a Python cross-check is the fallback |
 | Async concurrency / task groups | API present; not used for measurement | `@async.with_task_group` | Parallel samples would contend for CPU, memory and caches; the MVP runs samples sequentially |

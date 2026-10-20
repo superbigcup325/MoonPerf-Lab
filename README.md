@@ -176,7 +176,7 @@ What exists today:
 | [`schemas/`](schemas/) | JSON Schema for workload manifests, adapters and result artifacts |
 | [`workloads/numeric-scan/`](workloads/numeric-scan/) | First workload, specified; MoonBit and Rust implementations drafted |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
-| [`moonperf/`](moonperf/) | MoonBit core start: dataset, manifest, statistics, `list`/`validate` CLI; runner/report pending |
+| [`moonperf/`](moonperf/) | MoonBit core start: dataset, manifest, statistics, host primitive, `list`/`validate` CLI; experiment runner/report pending |
 | [`tests/`](tests/) | 47 Python tests for the specification and runner fixtures |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases, status, gaps, risks and acceptance |
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
@@ -224,7 +224,7 @@ mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
 results/                       committed experiment artifacts (none valid yet)
 pyproject.toml                 Python bootstrap package
-moonperf/                      MoonBit core: dataset + manifest + stats + CLI (P1.1)
+moonperf/                      MoonBit core: dataset + manifest + stats + host + CLI (P1.2)
 ```
 
 ## Quick start
@@ -319,7 +319,7 @@ earlier would delay the first trustworthy measurement.
 | Phase | Outcome | Status |
 | --- | --- | --- |
 | **P0 · Audit and contract** | Protocol, schemas, skeleton, capability probe, consistent docs | In place (2026-10-20) |
-| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; P1.0-A, dataset, manifest, stats and list/validate are in MoonBit |
+| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; dataset, manifest, stats, host primitive and list/validate are in MoonBit |
 | **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | After MVP |
 | **P3 · Automation** | History, CI correctness, noise-aware regression detection | After P2 |
 | **P4 · Research** | Profiling, bottleneck attribution, experiment matrices, cross-project reuse | After P2/P3 |
