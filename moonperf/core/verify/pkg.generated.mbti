@@ -1,0 +1,15 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/verify"
+
+// Values
+pub fn compare_values(Map[String, Json], Map[String, Json], Array[String], String, Double, Double) -> Array[String]
+
+pub async fn read_output(String, Array[String]) -> (Map[String, Json], Array[String])
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

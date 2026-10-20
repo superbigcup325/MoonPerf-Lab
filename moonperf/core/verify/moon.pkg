@@ -1,0 +1,8 @@
+import {
+  "moonbitlang/async/fs",
+  "moonbitlang/core/json",
+}
+
+import {
+  "moonbitlang/async",
+} for "test"
