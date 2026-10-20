@@ -29,7 +29,7 @@ deliverable.
 ## Target module map
 
 ```
-moonperf/                         MoonBit module (created in P1.1; dataset, manifest, CLI)
+moonperf/                         MoonBit module (created in P1.1; dataset, manifest, stats, CLI)
   moon.mod
   core/
     manifest/                     workload.toml + adapter.toml -> typed model
@@ -86,7 +86,7 @@ function of the artifact. Nothing in the report is typed by hand.
 | Dataset generation and identity | `moonperf/core/dataset` | `mpf/dataset.py` + `moonperf/core/dataset` (parity done) | No |
 | Build/run/timeout/exit-code capture | `moonperf/core/host` | `mpf/runner.py` | Only the OS primitive (see boundaries) |
 | Correctness gate | `moonperf/core/verify` | `mpf/runner.py` | No |
-| Samples, statistics, CV, setup fraction | `moonperf/core/measure` | `mpf/runner.py` | No |
+| Samples, statistics, CV, setup fraction | `moonperf/core/measure` | `mpf/runner.py` + `moonperf/core/measure` (partial) | No |
 | Result artifact assembly and validation | `moonperf/core/artifact` | `mpf/runner.py` | No (cross-check may be Python) |
 | Markdown report | `moonperf/core/report` | `mpf/report.py` | No |
 | Experiment orchestration | `moonperf/core/runner` | `mpf/runner.py` | No |

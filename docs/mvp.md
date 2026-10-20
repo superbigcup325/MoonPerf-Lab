@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. P1.1 is in progress: the MoonBit dataset, manifest and `list`/`validate` CLI are done; the runner, artifact and report are still Python.
+**Status:** P1 target, reviewed 2026-10-20. P1.1 is in progress: the MoonBit dataset, manifest, statistics and `list`/`validate` CLI are done; the runner, artifact and report are still Python.
 
 ## Definition
 

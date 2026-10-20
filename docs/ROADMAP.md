@@ -56,7 +56,7 @@ dependency that has not been proven on this toolchain.
 | MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
 | Rust reference implementation | Partial | `workloads/numeric-scan/implementations/rust/` | CV above gate on this host; setup semantics differ |
 | C reference | Not started | Workload README mentions it | Deferred to P2 |
-| MoonBit framework core | Partial | `core/dataset`, `core/manifest`, `cli`; golden SHA, byte parity, list/validate | Statistics, report, artifact and runner still to port |
+| MoonBit framework core | Partial | `core/dataset`, `core/manifest`, `core/measure`, `cli`; golden SHA, parity, list/validate, stats | Report, artifact and runner still to port |
 | Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test; port the cache/identity path |
 | Process-group timeout | Partial | Python uses `start_new_session`; MoonBit async timeout leaves grandchildren; `setsid`/`kill` workaround verified | Implement it in the MoonBit core with an orphan test |
 | Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
@@ -254,9 +254,12 @@ and the golden `moon test` both pass.
 dataset/verify/measurement parsing and implementation discovery. The MoonBit
 CLI now provides `list` and `validate` against the real `workloads/` tree.
 
-**Deliverable:** the dataset, manifest and CLI `list`/`validate` slices are in
-place. Statistics, report and artifact are still to port; all MoonBit tests
-pass.
+**P1.1-C (done 2026-10-20):** summary statistics are ported: count, min,
+median, mean, sample standard deviation and CV, with tests for odd/even/single
+sample sets.
+
+**Deliverable:** dataset, manifest, statistics and CLI `list`/`validate` are in
+place. Report and artifact are still to port; all MoonBit tests pass.
 
 **Estimate:** 5–7 days.
 
@@ -681,7 +684,7 @@ report/artifact port.
   to `K=50`; generalized the result harness/setup contract and added
   `build_dir`; added the MoonBit dataset + CLI slice with a passing 1M golden
   hash and byte parity against the Python generator; added the typed manifest
-  model and MoonBit `list`/`validate`.
+  model, summary statistics and MoonBit `list`/`validate`.
 
 ## Documentation change log (2026-10-20)
 
