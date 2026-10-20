@@ -19,15 +19,24 @@ Rules:
   `active` means every discovered implementation passes the correctness gate.
   `retired` keeps the manifest for history; nothing runs it.
 - `verify.reference` names the implementation used as ground truth once
-  implementations exist. Correctness is checked before any timing is kept.
-- Adding a benchmark means adding a directory here, not editing the harness.
+  implementations exist. The reference is verified first; failing it invalidates
+  the experiment. Correctness is checked before any timing is kept.
+- Adding a benchmark means adding a directory here, not editing the framework
+  core. The core is MoonBit; the implementations under test may be any language.
+- A workload becomes `active` only after its correctness gate can be shown to
+  fail on an injected fault and a valid artifact is recorded.
 
 See [`docs/experiment-protocol.md`](../docs/experiment-protocol.md) for the
-field-by-field contract and [`docs/ROADMAP.md`](../docs/ROADMAP.md) for the
-order in which workloads land.
+field-by-field contract, [`docs/mvp.md`](../docs/mvp.md) for the MVP acceptance
+tests and [`docs/ROADMAP.md`](../docs/ROADMAP.md) for the order in which
+workloads land.
 
 ## Current workloads
 
 | Workload | Tier | Status | Implementations |
 | --- | --- | --- | --- |
-| [numeric-scan](numeric-scan/) | micro | draft | none yet (P1) |
+| [numeric-scan](numeric-scan/) | micro | draft | MoonBit, Rust (drafts); C planned for P2 |
+
+None is `active` yet: there is no accepted artifact. The Python `mpf run` draft
+is not evidence; see the P1 status in
+[`docs/ROADMAP.md`](../docs/ROADMAP.md#current-status).

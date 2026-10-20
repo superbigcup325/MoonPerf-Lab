@@ -5,6 +5,14 @@ with `schema_version = 1`. A change that alters semantics requires a protocol
 version bump; existing artifacts stay readable under the version that produced
 them.
 
+> **Implementation status (2026-10-20).** This is the normative contract, not a
+> description of the current code. The Python bootstrap implements most of it,
+> but no admissible artifact has been produced yet and the MoonBit core is P1.
+> The planned P1 additions — a `--repeat 0` setup baseline, reference-first
+> verification and language-neutral harness metadata — are specified in
+> [`mvp.md`](mvp.md) and [`architecture.md`](architecture.md); they will be
+> folded into this protocol when implemented. Until then, version 1 governs.
+
 The protocol exists because a performance number is easy to produce and hard to
 trust. It defines what counts as an admissible measurement, so that a result
 can be checked by someone who was not present when it was produced.
@@ -263,7 +271,7 @@ A result artifact is invalid if any of the following is missing:
 | Group | Fields |
 | --- | --- |
 | Source | `commit` (40 hex chars), `dirty`, `branch` |
-| Harness | harness `version`, Python version |
+| Harness | harness `version`, runtime name/version (the current Python bootstrap records the Python version) |
 | Workload | `name`, `version`, `tier`, manifest SHA-256 |
 | Dataset | `generator`, `count`, `seed`, `params`, SHA-256, byte size |
 | Parameters | the workload params used |

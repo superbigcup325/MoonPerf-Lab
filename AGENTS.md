@@ -2,20 +2,26 @@
 
 ## What this is
 
-MoonPerf Lab is a reproducible performance research platform for MoonBit:
+MoonPerf Lab is a MoonBit-first, reproducible performance research platform:
 workload definitions, cross-language experiment infrastructure and verified
-optimization evidence. Moonlake is the first validation case, not the owner of
-the project. The project is explicitly **not** a benchmark collection, a
-language leaderboard or a profiler replacement.
+optimization evidence. The framework core is MoonBit; the programs under test
+may be MoonBit, Rust, C or another language. Moonlake is the first validation
+case, not the owner of the project. The project is explicitly **not** a
+benchmark collection, a language leaderboard or a profiler replacement.
 
 ## Read first
 
 1. [`README.md`](README.md) — positioning, non-goals, status and layout.
-2. [`docs/experiment-protocol.md`](docs/experiment-protocol.md) — the normative
-   contract for workloads, adapters, measurements and result artifacts. Any
+2. [`docs/experiment-protocol.md`](docs/experiment-protocol.md) — the
+   normative contract for workloads, adapters, measurements and results. Any
    change to a manifest, an adapter or a result goes through this document.
-3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — phases, scope boundaries and
-   acceptance criteria. Progress belongs there, not here.
+3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — phases, current status, gaps, risks
+   and acceptance criteria. Progress belongs there, not here.
+4. [`docs/architecture.md`](docs/architecture.md) — MoonBit-first target
+   architecture, capability matrix and ADRs.
+5. [`docs/mvp.md`](docs/mvp.md) — MVP scope and acceptance tests.
+6. [`docs/implementation-boundaries.md`](docs/implementation-boundaries.md) —
+   what belongs in MoonBit core, adapters, host scripts and dependencies.
 
 ## Layout
 
@@ -23,26 +29,31 @@ language leaderboard or a profiler replacement.
 README.md                    positioning and status
 LICENSE                      MIT
 docs/experiment-protocol.md  normative experiment contract
-docs/ROADMAP.md              phase plan and acceptance criteria
+docs/ROADMAP.md              phases, status and acceptance
+docs/architecture.md         MoonBit-first architecture and capability matrix
+docs/mvp.md                  MVP specification and acceptance tests
+docs/implementation-boundaries.md  ownership, dependency and platform rules
 schemas/workload.schema.json workload manifest contract
 schemas/adapter.schema.json  implementation adapter contract
 schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
-workloads/numeric-scan/      first workload (draft)
-mpf/                         Python harness: spec loading and validation
-mpf/cli.py                   `mpf list` and `mpf validate`
-mpf/specs.py                 schema loading, discovery, cross-file checks
+workloads/numeric-scan/      first workload; MoonBit + Rust drafts
+moonperf/                    MoonBit framework core (target; not created yet)
+mpf/                         Python bootstrap and temporary oracle
+host/                        optional native process shim (target; not created)
 tests/                       unittest suite for the specification
 results/                     committed experiment artifacts and reports
 ```
 
 Adding a workload means adding a directory under `workloads/`; it must not
-require editing `mpf/`. A new language implementation lives under
+require editing the framework core. A new language implementation lives under
 `workloads/<name>/implementations/<id>/`.
 
 ## Build and test
 
-The harness targets Python 3.11+ and has one runtime dependency (`jsonschema`).
+The current Python bootstrap targets Python 3.11+ and has one runtime
+dependency (`jsonschema`). It is frozen as an oracle; do not add experiment
+features to it.
 
 ```bash
 uv run mpf list
@@ -59,14 +70,23 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-There is no benchmark runner yet (P1). Do not claim, quote or commit a
-performance result that was not produced by the harness and recorded as a
-result artifact.
+Once `moonperf/` exists, the authoritative checks are the MoonBit ones:
+
+```bash
+moon check --deny-warn
+moon test
+moon build --release --target native
+```
+
+There is no accepted benchmark runner yet (P1). The Python `mpf run` draft is
+not evidence. Do not claim, quote or commit a performance result that was not
+produced by the accepted harness and recorded as a result artifact.
 
 ## Commits and red lines
 
 - Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`,
-  `perf:`, `chore:`).
+  `perf:`, `chore:`). Commit in reviewable slices; one giant drop is not a
+  development record.
 - Correctness gates performance: an implementation that fails verification is
   recorded with its errors, carries no samples and is never quoted.
 - No aggregate score and no leaderboard. Results are per-workload and
@@ -81,7 +101,18 @@ result artifact.
   its `version`; a published version is immutable.
 - Changing the meaning of `schemas/` requires bumping `schema_version` and
   keeping old artifacts readable; `mpf validate` and the unit tests must pass.
-- The harness stays small: do not add dependencies without a concrete need;
-  `jsonschema` is the only runtime dependency.
+- MoonBit-first is an architecture rule, not a line-count goal. Experiment
+  logic belongs in the MoonBit core; adapters, host scripts and the Python
+  oracle must not duplicate it.
+- The runtime path must not require Python after P1. Python remains only as a
+  cross-check/oracle under `tools/` (or the current `mpf/` until it is moved).
+- A timeout must kill the whole process group. A direct-child kill that leaves
+  grandchildren alive is a measurement bug, not a slow sample.
+- The timed region contains only the child process. Builds, manifest parsing,
+  hashing, JSON parsing, statistics and reporting happen outside it. A setup
+  baseline is recorded, not silently subtracted. No outlier trimming.
+- The harness stays small: no database, service, dashboard or distributed
+  execution in the MVP. Add a dependency only with a concrete need, a pinned
+  version and a compatible license.
 - No absolute local paths, credentials or machine-specific configuration in
   committed files.

@@ -20,5 +20,14 @@ Rules:
 - A result that cannot be reproduced is not deleted silently — it is superseded
   by a new artifact and the reason is recorded in the report.
 - `tmp/` is git-ignored. Nothing in it is evidence.
+- A scratch run must use `results/tmp/` (or another git-ignored directory under
+  `tmp/`). A directory such as `results/tmp-smoke/` is **not** a valid location:
+  `mpf validate` treats every JSON under `results/` except `tmp/` as a
+  committed artifact.
+- An `invalid` artifact can be kept as local diagnostic evidence, but it is not
+  a committed result of record. The results of record are `ok` artifacts from a
+  recorded host.
 
-No artifacts exist yet: the first experiment is the P1 milestone.
+No valid artifacts exist yet: the first experiment is the P1 milestone. The
+invalid smoke attempt was a scratch run and was removed; no artifact of record
+exists.

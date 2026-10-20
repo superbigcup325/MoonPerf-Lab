@@ -10,7 +10,10 @@ dist/
 .data/
 
 # Scratch results; curated artifacts live under results/ and are committed.
+# Use results/tmp/ for scratch runs. A results/tmp-* directory is a scratch
+# run too, not a committed artifact.
 results/tmp/
+results/tmp-*/
 
 # Build outputs of the implementations under test
 target/

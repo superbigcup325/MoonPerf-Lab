@@ -1,12 +1,13 @@
 # numeric-scan
 
-**Tier:** micro · **Status:** draft (specified, not yet measured)
+**Tier:** micro · **Status:** draft (implementations drafted; no accepted
+artifact)
 
 ## Research question
 
 What does a dense, sequential floating-point pass cost in MoonBit compared with
-Rust and C, and where does the difference come from: loop code generation,
-bounds checks, floating-point contraction, aliasing or call overhead?
+Rust, and where does the difference come from: loop code generation, bounds
+checks, floating-point contraction, aliasing or call overhead?
 
 The kernel is deliberately boring: one pass over an `f64` array, accumulating
 `sum`, `sumsq`, `min`, `max` and the number of values above a threshold. There
@@ -17,11 +18,11 @@ the compiler and the generated loop.
 ## Why this is first
 
 It is the smallest workload that exercises the whole experiment loop:
-deterministic dataset, exactly specified output, cheap to implement three
-times, and sensitive enough to compiler decisions that a fair comparison is
-non-trivial. A framework that cannot compare this kernel honestly will not
-compare a hash join or a Parquet decoder honestly either — it will just have
-more variables to blame.
+deterministic dataset, exactly specified output, cheap to implement twice, and
+sensitive enough to compiler decisions that a fair comparison is non-trivial. A
+framework that cannot compare this kernel honestly will not compare a hash join
+or a Parquet decoder honestly either — it will just have more variables to
+blame.
 
 ## Dataset
 
@@ -29,39 +30,75 @@ more variables to blame.
 Generated little-endian `f64` bytes, 8 MB, no header; the harness records the
 SHA-256 of the generated file in the result artifact. The generator is part of
 the harness, not of any implementation: every implementation reads the same
-bytes.
+bytes. The expected SHA-256 for this manifest is
+`fa49700b3b7bac4b840d944268bdc82291906c703a83a04cc57917c87a0a8fc2`; the
+MoonBit generator must reproduce it byte-for-byte before the experiment is
+accepted.
 
 ## Output and correctness
 
 Implementations emit a JSON object with `n`, `sum`, `sumsq`, `min`, `max` and
-`count_above` through the adapter interface. Verification is
-`tolerance` against the Rust reference, `rtol = 1e-9`, `atol = 0`, with integer
-fields compared exactly.
+`count_above` through the adapter interface. Verification is `tolerance`
+against the Rust reference, `rtol = 1e-9`, `atol = 0`, with integer fields
+compared exactly.
 
 The tolerance is not a way to make results pass: a skipped element or a
 wrongly accumulated term moves `sum` by far more than `1e-9` relative at this
 input size. The acceptance test for the workload is an implementation with an
 intentionally skipped element, which must fail correctness and must therefore
-never appear in the timing table.
+never appear in the timing table. That fault-injection fixture is a P1
+deliverable; it does not exist yet.
 
 ## Implementations
 
-| id | Language | Shape |
-| --- | --- | --- |
-| `moonbit` | MoonBit | safe loop over the array; no `unsafe` unless a variant is declared as a separate implementation |
-| `rust` | Rust | reference: `&[f64]` slice, bounds elision verified in the release build |
-| `c` | C17 | plain pointer loop, `-O3 -march=native` recorded in the build log |
+| id | Language | Shape | State |
+| --- | --- | --- | --- |
+| `moonbit` | MoonBit | byte-view load, then a scan loop; currently uses `unsafe_read_uint64_le` | Draft; needs a length check and the shared `f64` setup |
+| `rust` | Rust | reference: `&[f64]` slice over a `Vec<f64>` loaded from the file | Draft; CV above the gate on the current host |
+| `c` | C17 | plain pointer loop, `-O3 -march=native` recorded in the build log | P2; not an MVP requirement |
 
 Each implementation gets its own result row; a deliberately different build
 profile (for example `-O2` vs `-O3`) is a separate implementation id, not a
 hidden flag. That is what makes the comparison auditable.
+
+### Fairness constraints
+
+- Both MVP implementations must load the dataset into the same in-memory
+  representation before the kernel: an array of `f64`, one element per input.
+  The current Rust `Vec<f64>` conversion and the MoonBit per-pass byte scan are
+  not the same setup; the MoonBit side must materialize the array once.
+- Both must check that the input length is a multiple of 8 and that `n` matches
+  the dataset count.
+- Both must use the same threshold and the same comparison (`value > threshold`).
+- Both must print round-trippable floats; `n` and `count_above` are JSON
+  integers.
+- Both must use the released native build. A different profile is a different
+  implementation id.
+- The `--repeat K` loop must not be hoisted. Use a compiler barrier
+  (`Bench::keep`, `black_box`, a volatile sink or equivalent) and verify that
+  `K = 10` costs about 10× `K = 1` for this CPU-bound kernel.
+- The harness times one process invocation with `--repeat K`; the adapter does
+  not report its own time. The setup baseline (`--repeat 0`) is recorded by the
+  harness, not subtracted.
+
+## Measurement notes
+
+The manifest currently uses `warmup = 3`, `repeats = 10`, `inner_repeats = 10`,
+`timeout_s = 120` and `max_cv = 0.05`. The Python smoke run measured Rust at
+CV 7.57 %, above the gate, on a laptop on the `powersave` governor. The first
+accepted artifact must come from a controlled host profile and a `K` chosen so
+that the setup fraction is at most 0.10. Do not relax `max_cv` to make the run
+pass.
 
 ## What would falsify the experiment
 
 - The same implementation re-run on the same machine produces medians that
   differ by more than the measured effect.
 - The correctness gate cannot be made to fail when a fault is injected.
-- The three implementations do not read byte-identical input.
+- The implementations do not read byte-identical input.
+- The implementations do not share the same setup representation and input
+  validation.
+- The timeout leaves an orphan process that runs during the next sample.
 
 Any of these invalidates the comparison, and is reported as a harness or
 workload bug — not as a language result.
