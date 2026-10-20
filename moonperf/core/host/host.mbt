@@ -4,6 +4,18 @@ pub suberror HostError {
 }
 
 ///|
+pub fn error(message : String) -> HostError {
+  HostError::Message(message)
+}
+
+///|
+pub fn message_of(error : HostError) -> String {
+  match error {
+    HostError::Message(message) => message
+  }
+}
+
+///|
 pub struct CommandResult {
   exit_code : Int32
   timed_out : Bool

@@ -1,0 +1,111 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/artifact"
+
+import {
+  "superbigcup325/moonperf/core/measure",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct Artifact {
+  id : String
+  started_at : String
+  finished_at : String
+  source : SourceRecord
+  workload_name : String
+  workload_version : Int32
+  tier : String
+  manifest_sha256 : String
+  dataset : DatasetRecord
+  params : Map[String, Json]
+  measurement : MeasurementRecord
+  environment : EnvironmentRecord
+  reproduce_command : String
+  implementations : Array[ImplementationRecord]
+  comparisons : Array[ComparisonRecord]
+  verdict_status : String
+  verdict_notes : Array[String]
+}
+pub fn Artifact::to_json(Self) -> Json
+
+pub(all) struct BuildRecord {
+  ok : Bool
+  skipped : Bool
+  command : String?
+  duration_ms : Double
+  log_sha256 : String?
+}
+
+pub(all) struct ComparisonRecord {
+  baseline : String
+  subject : String
+  baseline_ns : Double
+  subject_ns : Double
+  ratio : Double
+  delta_pct : Double
+}
+
+pub(all) struct CorrectnessRecord {
+  ok : Bool
+  mode : String
+  checked_against : String?
+  values : Map[String, Json]
+  errors : Array[String]
+}
+
+pub(all) struct DatasetRecord {
+  generator : String
+  count : Int32
+  seed : Int64
+  params : Map[String, Json]
+  sha256 : String
+  bytes : Int32
+}
+
+pub(all) struct EnvironmentRecord {
+  os : String
+  os_release : String
+  arch : String
+  cpu_model : String
+  logical_cpus : Int32
+  governor : String?
+  memory_bytes : Int64
+}
+
+pub(all) struct ImplementationRecord {
+  id : String
+  language : String
+  reference : Bool
+  toolchain : String?
+  build : BuildRecord
+  correctness : CorrectnessRecord
+  samples_ns : Array[Int64]
+  summary : @measure.Summary?
+  setup : SetupRecord?
+}
+
+pub(all) struct MeasurementRecord {
+  warmup : Int32
+  repeats : Int32
+  timeout_s : Double
+  inner_repeats : Int32
+  max_cv : Double
+}
+
+pub(all) struct SetupRecord {
+  wall_ns : Int64
+  fraction : Double
+}
+
+pub(all) struct SourceRecord {
+  commit : String
+  dirty : Bool
+  branch : String
+}
+
+// Type aliases
+
+// Traits

@@ -1,3 +1,4 @@
 schema_version = 1
 language = "MoonBit"
 summary = "Scan loop over a byte view using unsafe_read_uint64_le; moon build --target native --release. Draft: needs an input length check and the shared f64 setup."
+build_dir = "_build"

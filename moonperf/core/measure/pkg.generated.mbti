@@ -2,6 +2,8 @@
 package "superbigcup325/moonperf/core/measure"
 
 // Values
+pub fn make_summary(Int32, Int64, Double, Double, Double, Double) -> Summary
+
 pub fn summarize(Array[Int64]) -> Summary?
 
 // Errors

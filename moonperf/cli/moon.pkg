@@ -4,6 +4,7 @@ import {
   "moonbitlang/core/env",
   "superbigcup325/moonperf/core/dataset",
   "superbigcup325/moonperf/core/manifest",
+  "superbigcup325/moonperf/core/runner",
 }
 
 pkgtype(kind: "executable")

@@ -1,0 +1,17 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/runner"
+
+import {
+  "superbigcup325/moonperf/core/artifact",
+}
+
+// Values
+pub async fn run_workload(String, String, String, String) -> (@artifact.Artifact, String, String)
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

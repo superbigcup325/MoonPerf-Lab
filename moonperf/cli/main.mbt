@@ -1,10 +1,11 @@
 ///|
 fn usage() -> Unit {
   println(
-    "usage: mpf <list|validate|dataset> [options]\n" +
+    "usage: mpf <list|validate|dataset|run> [options]\n" +
     "  list [root]                         list workloads under root\n" +
     "  validate [path ...]                 validate workloads or manifests\n" +
-    "  dataset --manifest FILE --out FILE  generate a workload dataset",
+    "  dataset --manifest FILE --out FILE  generate a workload dataset\n" +
+    "  run WORKLOAD [--out DIR] [--data-dir DIR] [--repo-root DIR]",
   )
 }
 
@@ -18,6 +19,27 @@ fn option(args : Array[String], name : String) -> String {
     index = index + 1
   }
   abort("missing " + name)
+}
+
+///|
+fn option_or(args : Array[String], name : String, fallback : String) -> String {
+  let mut index = 0
+  while index + 1 < args.length() {
+    if args[index] == name {
+      return args[index + 1]
+    }
+    index = index + 1
+  }
+  fallback
+}
+
+///|
+fn workload_manifest(path : String) -> String {
+  if path.has_suffix("workload.toml") {
+    path
+  } else {
+    @manifest.join(path, "workload.toml")
+  }
 }
 
 ///|
@@ -170,6 +192,53 @@ async fn dataset(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn run(args : Array[String]) -> Unit {
+  let workload = if args.length() >= 3 && !args[2].has_prefix("--") {
+    args[2]
+  } else {
+    option(args, "--workload")
+  }
+  let default_root = if (@fs.exists("../workloads") catch { _ => false }) {
+    ".."
+  } else {
+    "."
+  }
+  let out = option_or(args, "--out", "../results/tmp")
+  let data = option_or(args, "--data-dir", "../.data")
+  let repo = option_or(args, "--repo-root", default_root)
+  let (artifact, artifact_path, report_path) = @runner.run_workload(
+    workload_manifest(workload),
+    out,
+    data,
+    repo,
+  )
+  for implementation in artifact.implementations {
+    match implementation.summary {
+      Some(summary) =>
+        println(
+          "  " +
+          implementation.id +
+          " median " +
+          summary.median_ns.to_string() +
+          " ns/iter cv " +
+          (summary.cv * 100.0).to_string() +
+          " %",
+        )
+      None => println("  " + implementation.id + " excluded")
+    }
+  }
+  println("verdict " + artifact.verdict_status)
+  for note in artifact.verdict_notes {
+    println("  note: " + note)
+  }
+  println("artifact " + artifact_path)
+  println("report   " + report_path)
+  if artifact.verdict_status == "invalid" {
+    abort("experiment invalid")
+  }
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -183,6 +252,8 @@ async fn main {
     validate(args)
   } else if command == "dataset" {
     dataset(args)
+  } else if command == "run" {
+    run(args)
   } else {
     usage()
     abort("unknown command: " + command)

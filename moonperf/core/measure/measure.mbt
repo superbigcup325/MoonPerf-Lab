@@ -10,6 +10,18 @@ pub struct Summary {
 }
 
 ///|
+pub fn make_summary(
+  count : Int32,
+  min_ns : Int64,
+  median_ns : Double,
+  mean_ns : Double,
+  stdev_ns : Double,
+  cv : Double,
+) -> Summary {
+  { count, min_ns, median_ns, mean_ns, stdev_ns, cv, }
+}
+
+///|
 pub fn summarize(samples : Array[Int64]) -> Summary? {
   let count = samples.length()
   if count == 0 {

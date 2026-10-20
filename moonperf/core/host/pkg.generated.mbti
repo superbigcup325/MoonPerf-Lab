@@ -2,6 +2,10 @@
 package "superbigcup325/moonperf/core/host"
 
 // Values
+pub fn error(String) -> HostError
+
+pub fn message_of(HostError) -> String
+
 pub async fn run(String, Array[String], String?, Int32, String, String) -> CommandResult raise HostError
 
 // Errors
