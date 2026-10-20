@@ -53,8 +53,8 @@ deliverable; it does not exist yet.
 
 | id | Language | Shape | State |
 | --- | --- | --- | --- |
-| `moonbit` | MoonBit | byte-view load, then a scan loop; currently uses `unsafe_read_uint64_le` | Draft; needs a length check and the shared `f64` setup |
-| `rust` | Rust | reference: `&[f64]` slice over a `Vec<f64>` loaded from the file | Draft; CV above the gate on the current host |
+| `moonbit` | MoonBit | materializes an `f64` array after a length check, then scans it; `Bench::keep` barrier across repeats | Draft; host stability pending |
+| `rust` | Rust | reference: `Vec<f64>` load, `&[f64]` scan, `black_box` barrier across repeats | Draft; host stability pending |
 | `c` | C17 | plain pointer loop, `-O3 -march=native` recorded in the build log | P2; not an MVP requirement |
 
 Each implementation gets its own result row; a deliberately different build
@@ -63,10 +63,10 @@ hidden flag. That is what makes the comparison auditable.
 
 ### Fairness constraints
 
-- Both MVP implementations must load the dataset into the same in-memory
+- Both MVP implementations load the dataset into the same in-memory
   representation before the kernel: an array of `f64`, one element per input.
-  The current Rust `Vec<f64>` conversion and the MoonBit per-pass byte scan are
-  not the same setup; the MoonBit side must materialize the array once.
+  The MoonBit adapter now materializes the array once; the Rust reference
+  already did.
 - Both must check that the input length is a multiple of 8 and that `n` matches
   the dataset count.
 - Both must use the same threshold and the same comparison (`value > threshold`).
