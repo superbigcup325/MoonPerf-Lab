@@ -1,0 +1,587 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/superbigcup325/moonperf-lab/main/schemas/result.schema.json",
+  "title": "MoonPerf Lab experiment result",
+  "description": "One experiment artifact. It carries the raw samples, the environment, the correctness verdict and the reproduction command; a Markdown report is generated from it, never the other way round. See docs/experiment-protocol.md, section 'Result artifact'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "experiment",
+    "implementations",
+    "verdict"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "experiment": {
+      "$ref": "#/$defs/experiment"
+    },
+    "implementations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/implementation"
+      }
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/comparison"
+      }
+    },
+    "verdict": {
+      "$ref": "#/$defs/verdict"
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "scalar": {
+      "type": [
+        "string",
+        "number",
+        "boolean"
+      ]
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "started_at",
+        "harness",
+        "source",
+        "workload",
+        "dataset",
+        "measurement",
+        "environment",
+        "reproduce_command"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "harness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "version",
+            "python"
+          ],
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "python": {
+              "type": "string"
+            }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "dirty",
+            "branch"
+          ],
+          "properties": {
+            "commit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "branch": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "workload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version",
+            "tier",
+            "manifest_sha256"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/identifier"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "tier": {
+              "enum": [
+                "micro",
+                "component",
+                "end-to-end"
+              ]
+            },
+            "manifest_sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "dataset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "generator",
+            "count",
+            "seed",
+            "sha256",
+            "bytes"
+          ],
+          "properties": {
+            "generator": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "params": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/scalar"
+              }
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/scalar"
+          }
+        },
+        "measurement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "warmup",
+            "repeats",
+            "timeout_s",
+            "inner_repeats",
+            "order",
+            "clock"
+          ],
+          "properties": {
+            "warmup": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "repeats": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "timeout_s": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "max_cv": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+            },
+            "order": {
+              "const": "round-robin"
+            },
+            "clock": {
+              "const": "monotonic"
+            },
+            "inner_repeats": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "os",
+            "os_release",
+            "arch",
+            "cpu",
+            "memory_bytes"
+          ],
+          "properties": {
+            "os": {
+              "type": "string",
+              "minLength": 1
+            },
+            "os_release": {
+              "type": "string"
+            },
+            "arch": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cpu": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "model",
+                "logical_cpus"
+              ],
+              "properties": {
+                "model": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "logical_cpus": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "governor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "memory_bytes": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "reproduce_command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "language",
+        "reference",
+        "build",
+        "correctness",
+        "samples_ns",
+        "summary"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reference": {
+          "type": "boolean"
+        },
+        "toolchain": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ok",
+            "skipped"
+          ],
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "skipped": {
+              "type": "boolean"
+            },
+            "command": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "duration_ms": {
+              "type": "number",
+              "minimum": 0
+            },
+            "log_sha256": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/sha256"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "log_tail": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          }
+        },
+        "correctness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ok",
+            "mode",
+            "values",
+            "errors"
+          ],
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "mode": {
+              "enum": [
+                "exact",
+                "tolerance"
+              ]
+            },
+            "checked_against": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "output_sha256": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/sha256"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "values": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/scalar"
+              }
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "samples_ns": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/summary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "correctness": {
+                "properties": {
+                  "ok": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "samples_ns": {
+                "minItems": 1
+              },
+              "summary": {
+                "$ref": "#/$defs/summary"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "correctness": {
+                "properties": {
+                  "ok": {
+                    "const": false
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "samples_ns": {
+                "maxItems": 0
+              },
+              "summary": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "min_ns",
+        "median_ns",
+        "mean_ns",
+        "stdev_ns",
+        "cv"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "median_ns": {
+          "type": "number",
+          "minimum": 0
+        },
+        "mean_ns": {
+          "type": "number",
+          "minimum": 0
+        },
+        "stdev_ns": {
+          "type": "number",
+          "minimum": 0
+        },
+        "cv": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline",
+        "subject",
+        "metric",
+        "baseline_ns",
+        "subject_ns",
+        "ratio",
+        "delta_pct"
+      ],
+      "properties": {
+        "baseline": {
+          "$ref": "#/$defs/identifier"
+        },
+        "subject": {
+          "$ref": "#/$defs/identifier"
+        },
+        "metric": {
+          "const": "median_ns"
+        },
+        "baseline_ns": {
+          "type": "number",
+          "minimum": 0
+        },
+        "subject_ns": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ratio": {
+          "type": "number",
+          "minimum": 0,
+          "description": "subject / baseline; below 1 means the subject is faster."
+        },
+        "delta_pct": {
+          "type": "number",
+          "description": "(ratio - 1) * 100; negative means the subject is faster."
+        }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "ok",
+            "unstable",
+            "invalid"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

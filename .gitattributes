@@ -1,0 +1,5 @@
+# Everything is UTF-8 text with LF endings unless noted.
+* text=auto eol=lf
+
+# Datasets and result fixtures are compared byte for byte.
+*.bin binary

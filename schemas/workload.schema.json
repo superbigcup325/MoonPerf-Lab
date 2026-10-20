@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/superbigcup325/moonperf-lab/main/schemas/workload.schema.json",
+  "title": "MoonPerf Lab workload manifest",
+  "description": "A workload.toml, parsed to JSON, must validate against this schema. See docs/experiment-protocol.md for the semantics of every field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "name",
+    "version",
+    "tier",
+    "summary",
+    "dataset",
+    "verify",
+    "measurement"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "name": {
+      "$ref": "#/$defs/identifier"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Manifest version. Bump it whenever the dataset, params, verification or measurement change; never edit a published version in place."
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "active",
+        "retired"
+      ],
+      "default": "draft",
+      "description": "draft: spec only; active: every declared implementation passes correctness; retired: kept for history, not run."
+    },
+    "tier": {
+      "enum": [
+        "micro",
+        "component",
+        "end-to-end"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator",
+        "count",
+        "seed"
+      ],
+      "properties": {
+        "generator": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Built-in dataset generator id, e.g. uniform-f64. Changing a generator's algorithm requires a new id."
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/scalar"
+          }
+        }
+      }
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/scalar"
+      },
+      "description": "Workload parameters handed to every implementation as a key=value file."
+    },
+    "verify": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "fields"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "exact",
+            "tolerance"
+          ],
+          "description": "exact: declared fields must match the reference exactly, type included. tolerance: floating-point fields are compared within rtol/atol, everything else exactly."
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 64
+          }
+        },
+        "reference": {
+          "$ref": "#/$defs/identifier",
+          "description": "Implementation id used as ground truth. Must be one of the discovered implementations when the workload is active."
+        },
+        "rtol": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Relative tolerance; required in tolerance mode."
+        },
+        "atol": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "tolerance"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "rtol"
+            ]
+          }
+        }
+      ]
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "warmup",
+        "repeats",
+        "timeout_s",
+        "inner_repeats"
+      ],
+      "properties": {
+        "warmup": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repeats": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeout_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_cv": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "default": 0.05,
+          "description": "Coefficient of variation above which the run is reported as unstable."
+        },
+        "inner_repeats": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Kernel iterations performed inside one process invocation; the measured wall time is divided by this number."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "scalar": {
+      "type": [
+        "string",
+        "number",
+        "boolean"
+      ]
+    }
+  }
+}

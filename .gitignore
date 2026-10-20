@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+
+# Generated datasets. They are rebuilt from (generator, count, seed, params)
+# recorded in the workload manifest; the bytes never enter version control.
+.data/
+
+# Scratch results; curated artifacts live under results/ and are committed.
+results/tmp/
+
+# Build outputs of the implementations under test
+target/
+_build/
+.mooncakes/
+.moonagent/
+*.o
+*.obj
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,32 @@
+schema_version = 1
+name = "numeric-scan"
+version = 1
+status = "draft"
+tier = "micro"
+summary = "Stream a dense f64 array and accumulate sum, sum of squares, min, max and a threshold count."
+
+[dataset]
+generator = "uniform-f64"
+count = 1_000_000
+seed = 20261020
+
+[dataset.params]
+min = -1.0
+max = 1.0
+
+[params]
+threshold = 0.0
+
+[verify]
+mode = "tolerance"
+reference = "rust"
+rtol = 1.0e-9
+atol = 0.0
+fields = ["n", "sum", "sumsq", "min", "max", "count_above"]
+
+[measurement]
+warmup = 3
+repeats = 10
+timeout_s = 120
+inner_repeats = 10
+max_cv = 0.05
