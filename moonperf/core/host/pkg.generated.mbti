@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/host"
+
+// Values
+pub async fn run(String, Array[String], String?, Int32, String, String) -> CommandResult raise HostError
+
+// Errors
+pub suberror HostError {
+  Message(String)
+}
+
+// Types and methods
+pub struct CommandResult {
+  exit_code : Int32
+  timed_out : Bool
+  wall_us : Double
+  stdout_path : String
+  stderr_path : String
+}
+
+// Type aliases
+
+// Traits

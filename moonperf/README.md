@@ -1,8 +1,8 @@
 # moonperf — MoonBit core
 
-**Status:** P1.1 in progress. The dataset generator, manifest model,
-statistics and `list`/`validate` CLI exist; report, artifact and runner are
-still to be ported from the Python oracle.
+**Status:** P1.2 in progress. The dataset generator, manifest model,
+statistics, host primitive and `list`/`validate` CLI exist; the experiment
+runner, artifact and report are still to be ported from the Python oracle.
 
 ## Build and test
 
@@ -43,5 +43,5 @@ the parity test. The 1,000,000-element golden hash is also a `moon test` case.
 
 - This module owns the experiment model and the framework logic; manifest parsing, dataset generation, statistics and `list`/`validate` are ported.
 - Workload implementations stay under `workloads/<name>/implementations/`.
-- Process spawning and timeout are not in this slice yet; they land in P1.2.
+- `core/host` runs one child through `setsid -w`, kills the process group on timeout and reaps the child; the orphan test passes.
 - No Python on the runtime path. The Python harness is the oracle.
