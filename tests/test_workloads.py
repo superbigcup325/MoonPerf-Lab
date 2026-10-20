@@ -28,6 +28,10 @@ generator = "uniform-f64"
 count = 16
 seed = 1
 
+[dataset.params]
+min = -1.0
+max = 1.0
+
 [verify]
 mode = "exact"
 fields = ["n"]
@@ -166,6 +170,56 @@ class WorkloadSemanticsTest(unittest.TestCase):
             self._add_implementation(workload_dir, "moonbit")
             with self.assertRaises(SpecError):
                 load_workload(workload_dir / "workload.toml")
+
+    def test_name_must_match_the_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST.replace('name = "demo-scan"', 'name = "other-scan"'),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SpecError) as raised:
+                load_workload(manifest_path)
+            self.assertIn("must match the workload directory", str(raised.exception))
+
+    def test_unknown_dataset_generator_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST.replace('generator = "uniform-f64"', 'generator = "uniform-f32"'),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SpecError) as raised:
+                load_workload(manifest_path)
+            self.assertIn("not implemented by the harness", str(raised.exception))
+
+    def test_uniform_f64_requires_bounded_params(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST.replace(
+                    "[dataset.params]\nmin = -1.0\nmax = 1.0\n\n", ""
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SpecError) as raised:
+                load_workload(manifest_path)
+            self.assertIn("dataset.params.min", str(raised.exception))
+
+    @unittest.skipUnless(os.name == "posix", "executable bits are POSIX-only")
+    def test_non_executable_build_script_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            implementation_dir = self._add_implementation(workload_dir)
+            build_script = implementation_dir / "build.sh"
+            build_script.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            build_script.chmod(0o644)
+            with self.assertRaises(SpecError) as raised:
+                load_workload(workload_dir / "workload.toml")
+            self.assertIn("not executable", str(raised.exception))
 
     def test_active_workload_needs_implementations(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

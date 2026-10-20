@@ -1,0 +1,3 @@
+schema_version = 1
+language = "Rust"
+summary = "Reference: `&[f64]` slice, sequential scalar loop, rustc --edition 2021 -C opt-level=3 -C target-cpu=native"

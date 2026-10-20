@@ -25,9 +25,15 @@ WORKLOADS_DIR = REPO_ROOT / "workloads"
 WORKLOAD_MANIFEST = "workload.toml"
 ADAPTER_MANIFEST = "adapter.toml"
 RUN_SCRIPT = "run.sh"
+BUILD_SCRIPT = "build.sh"
+DESCRIBE_SCRIPT = "describe.sh"
 
 IDENTIFIER = re.compile(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$")
 PARAM_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
+
+# Dataset generators the harness can produce (protocol section 4). A manifest
+# may only name one of these; a new algorithm gets a new id and harness code.
+SUPPORTED_GENERATORS = ("uniform-f64",)
 
 
 class SpecError(Exception):
@@ -166,6 +172,11 @@ def discover_implementations(
         elif not os.access(run_script, os.X_OK):
             problems.append(f"{run_script}: not executable (chmod +x it)")
 
+        for optional in (BUILD_SCRIPT, DESCRIBE_SCRIPT):
+            script = entry / optional
+            if script.is_file() and not os.access(script, os.X_OK):
+                problems.append(f"{script}: not executable (chmod +x it)")
+
         implementations.append(
             Implementation(
                 id=entry.name,
@@ -186,7 +197,7 @@ def load_workload(manifest_path: Path) -> Workload:
     implementations, problems = discover_implementations(manifest_path.parent)
 
     problems.extend(errors)
-    problems.extend(_semantic_problems(data, implementations))
+    problems.extend(_semantic_problems(manifest_path, data, implementations))
     if problems:
         raise SpecError(
             "\n".join(f"{manifest_path}: {problem}" for problem in problems)
@@ -195,11 +206,21 @@ def load_workload(manifest_path: Path) -> Workload:
 
 
 def _semantic_problems(
-    data: dict[str, Any], implementations: Sequence[Implementation]
+    manifest_path: Path,
+    data: dict[str, Any],
+    implementations: Sequence[Implementation],
 ) -> list[str]:
     problems: list[str] = []
     status = str(data.get("status", "draft"))
     reference = data.get("verify", {}).get("reference")
+
+    # The manifest name addresses the workload (results/<name>/...); the
+    # directory must agree with it, or the two identities drift apart.
+    if data.get("name") != manifest_path.parent.name:
+        problems.append(
+            f"name '{data.get('name')}' must match the workload directory "
+            f"'{manifest_path.parent.name}'"
+        )
 
     if status == "active" and not implementations:
         problems.append(
@@ -225,6 +246,27 @@ def _semantic_problems(
         if isinstance(value, str) and ("\n" in value or "\r" in value):
             problems.append(
                 f"params.{key}: string parameters must be single-line"
+            )
+
+    dataset = data.get("dataset", {})
+    generator = str(dataset.get("generator", ""))
+    if generator not in SUPPORTED_GENERATORS:
+        problems.append(
+            f"dataset.generator '{generator}' is not implemented by the harness "
+            f"(supported: {', '.join(SUPPORTED_GENERATORS)})"
+        )
+    elif generator == "uniform-f64":
+        params = dataset.get("params", {})
+        for key in ("min", "max"):
+            value = params.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                problems.append(
+                    f"dataset.params.{key} is required by uniform-f64 and must be a number"
+                )
+        low, high = params.get("min"), params.get("max")
+        if isinstance(low, (int, float)) and isinstance(high, (int, float)) and not low < high:
+            problems.append(
+                "dataset.params.min must be below dataset.params.max"
             )
     return problems
 
