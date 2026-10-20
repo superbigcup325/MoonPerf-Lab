@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -45,7 +46,7 @@ threshold = 0.0
 [verify]
 mode = "{mode}"
 fields = {fields}
-reference = "alpha"
+reference = "{reference}"
 {extra}
 
 [measurement]
@@ -86,6 +87,7 @@ def make_workload(
     fields: list[str] | None = None,
     extra: str = "",
     timeout_s: float = 10.0,
+    reference: str = "alpha",
 ) -> Path:
     workload_dir = root / "demo-scan"
     workload_dir.mkdir()
@@ -95,6 +97,7 @@ def make_workload(
             fields=json.dumps(fields or ["n", "count_above"]),
             extra=extra,
             timeout_s=timeout_s,
+            reference=reference,
         ),
         encoding="utf-8",
     )
@@ -133,6 +136,26 @@ class CorrectnessGateTest(unittest.TestCase):
             self.assertIn("invalid", report_text)
             self.assertIn("beta", report_text)
             self.assertIn("No comparison is published", report_text)
+
+    def test_reference_is_verified_before_subjects(self) -> None:
+        # Regression: the reference must not be skipped just because a subject
+        # sorts before it in discovery order.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workload_dir = make_workload(root, reference="zeta")
+            add_implementation(workload_dir, "alpha", '{"n": 16, "count_above": 5}')
+            add_implementation(workload_dir, "zeta", '{"n": 16, "count_above": 5}')
+
+            report = run_workload(
+                workload_dir, out_dir=root / "out", data_dir=root / ".data"
+            )
+
+            implementations = {
+                item["id"]: item for item in report.artifact["implementations"]
+            }
+            self.assertTrue(implementations["zeta"]["correctness"]["ok"])
+            self.assertTrue(implementations["alpha"]["correctness"]["ok"])
+            self.assertEqual(report.artifact["verdict"]["status"], "ok")
 
     def test_tolerance_accepts_a_rounding_difference(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -234,6 +257,33 @@ def _make_measured_invocation_fail(workload_dir: Path) -> None:
         encoding="utf-8",
     )
     script.chmod(0o755)
+
+
+class RunnerPathTest(unittest.TestCase):
+    def test_relative_workload_path_is_supported(self) -> None:
+        # Regression: the documented invocation passes a path relative to the
+        # repository root. Implementation directories must be resolved before
+        # they are used as subprocess paths.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workload_dir = make_workload(root)
+            add_implementation(workload_dir, "alpha", '{"n": 16, "count_above": 5}')
+            add_implementation(workload_dir, "beta", '{"n": 16, "count_above": 5}')
+
+            previous = Path.cwd()
+            os.chdir(root)
+            try:
+                report = run_workload(
+                    Path("demo-scan"),
+                    out_dir=root / "out",
+                    data_dir=root / ".data",
+                )
+            finally:
+                os.chdir(previous)
+
+            self.assertEqual(report.artifact["verdict"]["status"], "ok")
+            self.assertTrue(report.artifact_path.is_file())
+            self.assertTrue(report.report_path.is_file())
 
 
 class CliTest(unittest.TestCase):

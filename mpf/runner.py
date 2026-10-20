@@ -484,9 +484,21 @@ def run_workload(
                 verdict_notes.append(f"build failed: {run.impl.id}")
 
         # 2. Correctness gate, reference first: its output is ground truth.
+        # The reference must be verified before any subject, regardless of the
+        # alphabetical discovery order. Otherwise a subject that sorts before
+        # the reference is rejected with "reference did not pass".
         reference_values: dict[str, Any] | None = None
-        reference_errors: list[str] = []
-        for run in runs.values():
+        reference_run = runs.get(reference_id)
+        if reference_run is None:
+            raise RunError(
+                f"{workload.name}: reference '{reference_id}' is not a discovered "
+                "implementation"
+            )
+        verification_order = [reference_run]
+        verification_order.extend(
+            run for run in runs.values() if run is not reference_run
+        )
+        for run in verification_order:
             output_path = tmp_dir / f"{run.impl.id}-correctness.json"
             if not run.build_ok:
                 run.correctness_ok = False
@@ -505,14 +517,12 @@ def run_workload(
                 continue
             run.output_sha256 = _sha256(output_path.read_bytes()) if output_path.is_file() else None
             values, errors = read_output(output_path, fields)
-            if run.impl.id == reference_id:
+            if run is reference_run:
                 run.correctness_values = values
                 run.correctness_errors = errors
                 run.correctness_ok = not errors
                 if run.correctness_ok:
                     reference_values = dict(values)
-                else:
-                    reference_errors = list(errors)
                 continue
             if reference_values is None:
                 run.correctness_errors = [

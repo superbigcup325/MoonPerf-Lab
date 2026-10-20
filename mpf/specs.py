@@ -180,7 +180,7 @@ def discover_implementations(
         implementations.append(
             Implementation(
                 id=entry.name,
-                directory=entry,
+                directory=entry.resolve(),
                 language=str(adapter.get("language", "")),
                 summary=adapter.get("summary"),
             )
@@ -191,7 +191,9 @@ def discover_implementations(
 def load_workload(manifest_path: Path) -> Workload:
     """Load, schema-validate and cross-check one workload manifest."""
 
-    manifest_path = Path(manifest_path)
+    # Resolve once: callers may pass a path relative to the current directory,
+    # and every later subprocess call must not depend on the caller's cwd.
+    manifest_path = Path(manifest_path).resolve()
     data = load_toml(manifest_path)
     errors = validate_instance(data, "workload.schema.json")
     implementations, problems = discover_implementations(manifest_path.parent)
