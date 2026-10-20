@@ -83,12 +83,17 @@ hidden flag. That is what makes the comparison auditable.
 
 ## Measurement notes
 
-The manifest currently uses `warmup = 3`, `repeats = 10`, `inner_repeats = 10`,
-`timeout_s = 120` and `max_cv = 0.05`. The Python smoke run measured Rust at
-CV 7.57 %, above the gate, on a laptop on the `powersave` governor. The first
-accepted artifact must come from a controlled host profile and a `K` chosen so
-that the setup fraction is at most 0.10. Do not relax `max_cv` to make the run
-pass.
+The manifest uses `warmup = 3`, `repeats = 10`, `inner_repeats = 50`,
+`timeout_s = 120` and `max_cv = 0.05` (version 2; the measurement change from
+`K = 10` bumped the version). On the `powersave` laptop, `K = 10` gave Rust
+CV 7.57 %, above the gate; `K = 50` gave CV 2.07 % for Rust and 2.36 % for
+MoonBit in a dirty-tree oracle run.
+
+That run is a host and contract check, not an accepted artifact: the build was
+incremental, the setup baseline and optimizer-elimination checks are not
+implemented yet, and the two implementations still differ in setup semantics.
+The first accepted artifact still needs a clean build and a recorded
+`setup_fraction`. Do not relax `max_cv` to make a run pass.
 
 ## What would falsify the experiment
 
