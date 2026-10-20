@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/manifest"
+
+import {
+  "moonbit-community/toml",
+}
+
+// Values
+pub fn basename(String) -> String
+
+pub async fn discover_implementations(String) -> Array[Implementation] raise ManifestError
+
+pub async fn discover_workload_paths(String) -> Array[String]
+
+pub fn join(String, String) -> String
+
+pub async fn load_workload(String) -> Workload raise ManifestError
+
+pub fn parent(String) -> String
+
+pub fn parse_manifest_text(String, String) -> Workload raise ManifestError
+
+// Errors
+pub suberror ManifestError {
+  Message(String)
+}
+
+// Types and methods
+pub struct Dataset {
+  generator : String
+  count : Int32
+  seed : Int64
+  min_value : Double
+  max_value : Double
+}
+
+pub struct Implementation {
+  id : String
+  directory : String
+  language : String
+  summary : String?
+  build_dir : String?
+}
+
+pub struct Measurement {
+  warmup : Int32
+  repeats : Int32
+  timeout_s : Double
+  inner_repeats : Int32
+  max_cv : Double
+}
+
+pub struct Verify {
+  mode : String
+  reference : String?
+  rtol : Double?
+  atol : Double?
+  fields : Array[String]
+}
+
+pub struct Workload {
+  manifest_path : String
+  directory : String
+  name : String
+  version : Int32
+  status : String
+  tier : String
+  summary : String?
+  dataset : Dataset
+  params : Map[String, @toml.TomlValue]
+  verify : Verify
+  measurement : Measurement
+  mut implementations : Array[Implementation]
+}
+
+// Type aliases
+
+// Traits

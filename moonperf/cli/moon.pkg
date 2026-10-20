@@ -2,8 +2,8 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/core/env",
-  "moonbit-community/toml",
   "superbigcup325/moonperf/core/dataset",
+  "superbigcup325/moonperf/core/manifest",
 }
 
 pkgtype(kind: "executable")

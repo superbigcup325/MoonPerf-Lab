@@ -1,8 +1,8 @@
 # moonperf — MoonBit core
 
-**Status:** P1.1 in progress. The dataset generator and the first CLI slice
-exist; the manifest model, report, artifact and runner are still to be ported
-from the Python oracle.
+**Status:** P1.1 in progress. The dataset generator, manifest model and
+`list`/`validate` CLI exist; statistics, report, artifact and runner are still
+to be ported from the Python oracle.
 
 ## Build and test
 
@@ -10,6 +10,13 @@ from the Python oracle.
 moon check --deny-warn --target native
 moon test --target native
 moon fmt --check
+```
+
+CLI commands:
+
+```bash
+moon run cli --target native -- list ../workloads
+moon run cli --target native -- validate ../workloads
 ```
 
 ## Dataset vertical slice
@@ -34,7 +41,7 @@ the parity test. The 1,000,000-element golden hash is also a `moon test` case.
 
 ## Boundaries
 
-- This module owns the experiment model and the framework logic.
+- This module owns the experiment model and the framework logic; manifest parsing, dataset generation and `list`/`validate` are ported.
 - Workload implementations stay under `workloads/<name>/implementations/`.
 - Process spawning and timeout are not in this slice yet; they land in P1.2.
 - No Python on the runtime path. The Python harness is the oracle.
