@@ -38,7 +38,7 @@ schemas/adapter.schema.json  implementation adapter contract
 schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
 workloads/numeric-scan/      first workload; MoonBit + Rust drafts
-moonperf/                    MoonBit core: dataset, manifest, stats, host, list/validate CLI (P1.2)
+moonperf/                    MoonBit core: full experiment loop + CLI (P1.2)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
 tests/                       unittest suite for the specification
@@ -70,7 +70,7 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The MoonBit core now exists as a dataset + CLI slice. Its authoritative checks
+The MoonBit core now owns the full experiment loop. Its authoritative checks
 run from `moonperf/`:
 
 ```bash
@@ -80,9 +80,10 @@ moon test --target native
 moon fmt --check
 ```
 
-There is no accepted benchmark runner yet (P1). The Python `mpf run` draft is
-not evidence. Do not claim, quote or commit a performance result that was not
-produced by the accepted harness and recorded as a result artifact.
+There is no accepted benchmark runner yet (P1). The MoonBit `run` command is
+the current candidate; the Python `mpf run` draft is only an oracle. Do not
+claim, quote or commit a performance result that was not produced by the
+accepted harness and recorded as a result artifact.
 
 ## Commits and red lines
 

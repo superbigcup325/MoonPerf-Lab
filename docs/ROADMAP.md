@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; P1.0-A, dataset, manifest, stats, host primitive and list/validate are in MoonBit | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; the MoonBit core owns the full loop; host stability/acceptance remains | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -52,11 +52,11 @@ dependency that has not been proven on this toolchain.
 | Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | Result schema still requires a Python `harness.python` field |
 | Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml`; `mpf validate` | `status = draft`; no accepted run |
 | Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 47 tests | Not the target core |
-| Python bootstrap: run/report | Partial | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Two blocking defects fixed in P1.0-A; no accepted artifact |
+| Python bootstrap: run/report | Oracle | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Independent cross-check; not the runtime |
 | MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
 | Rust reference implementation | Partial | `workloads/numeric-scan/implementations/rust/` | CV above gate on this host; setup semantics differ |
 | C reference | Not started | Workload README mentions it | Deferred to P2 |
-| MoonBit framework core | Partial | `core/dataset`, `core/manifest`, `core/measure`, `core/host`, `cli`; golden SHA, parity, list/validate, stats, group-kill host | Experiment runner, artifact and report still to port |
+| MoonBit framework core | Implemented (MVP path) | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; clean-build artifact validates | Host stability, toolchain/build-log metadata and P1.3 checks remain |
 | Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test; port the cache/identity path |
 | Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; orphan test passes | Wire it into the experiment runner |
 | Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
@@ -270,9 +270,11 @@ place. Report and artifact are still to port; all MoonBit tests pass.
 child and returns exit code/wall time/stdout/stderr paths. The orphan test
 passes; no `sleep` survives a 200 ms timeout.
 
-**P1.2-B (next):** port the runner orchestration on top of `core/host`:
-clean build, reference-first correctness, warmup/repeats, setup baseline,
-timeout-as-invalid-artifact, result JSON and the Markdown report.
+**P1.2-B (done 2026-10-20):** the runner orchestration is ported on top of
+`core/host`: clean build (using `build_dir`), reference-first correctness,
+warmup/repeats, setup baseline, result JSON and the Markdown report. A
+clean-build run produced a schema-valid artifact; the host was `unstable`, so
+it is not an artifact of record.
 
 - Implement the process primitive with a new process group, timeout,
   process-group kill, exit-code and stdout/stderr capture. Linux MVP:
@@ -283,8 +285,10 @@ timeout-as-invalid-artifact, result JSON and the Markdown report.
 - Tune `K` for numeric-scan so setup is not dominant.
 - Add fixtures: wrong output, timeout with a grandchild, build failure.
 
-**Deliverable:** the MoonBit runner produces an artifact comparable to the
-Python oracle, and the orphan test passes.
+**Deliverable:** the MoonBit runner produces a schema-valid artifact and
+report; the orphan test passes. Remaining before acceptance: toolchain/build-log
+metadata, setup-dominated verdict handling, optimizer-elimination check and a
+stable host.
 
 **Estimate:** 5–7 days.
 
@@ -693,8 +697,8 @@ report/artifact port.
   to `K=50`; generalized the result harness/setup contract and added
   `build_dir`; added the MoonBit dataset + CLI slice with a passing 1M golden
   hash and byte parity against the Python generator; added the typed manifest
-  model, summary statistics, MoonBit `list`/`validate` and the process-group
-  host primitive with an orphan test.
+  model, summary statistics, MoonBit `list`/`validate`, the process-group host
+  primitive with an orphan test, and the full MoonBit runner/artifact/report.
 
 ## Documentation change log (2026-10-20)
 

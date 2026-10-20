@@ -12,7 +12,7 @@ deliverable is in [`mvp.md`](mvp.md).
 
 ## 1. What the MoonBit core owns
 
-The MoonBit core is the `moonperf/` module. It exists as a dataset + manifest + statistics + host + CLI slice; the experiment runner, artifact and report are still to port.
+The MoonBit core is the `moonperf/` module. It owns the full experiment loop; the Python harness is only an independent oracle.
 It owns every decision that makes an experiment an experiment:
 
 | Core responsibility | Module | Must not be delegated |

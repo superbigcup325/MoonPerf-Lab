@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. P1.1 and P1.2-A are in progress: the MoonBit dataset, manifest, statistics, host primitive and `list`/`validate` CLI are done; the experiment runner, artifact and report are still Python.
+**Status:** P1 target, reviewed 2026-10-20. The MoonBit core now owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. Remaining before acceptance: toolchain/build-log metadata, optimizer-elimination check, timeout-as-invalid-artifact, and a stable host.
 
 ## Definition
 

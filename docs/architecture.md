@@ -29,7 +29,7 @@ deliverable.
 ## Target module map
 
 ```
-moonperf/                         MoonBit module (created in P1.1; dataset, manifest, stats, host, CLI)
+moonperf/                         MoonBit module (P1.2; full experiment loop + CLI)
   moon.mod
   core/
     manifest/                     workload.toml + adapter.toml -> typed model
@@ -84,12 +84,12 @@ function of the artifact. Nothing in the report is typed by hand.
 | --- | --- | --- | --- |
 | Manifest parsing and semantic validation | `moonperf/core/manifest` | `mpf/specs.py` + `moonperf/core/manifest` (partial) | No |
 | Dataset generation and identity | `moonperf/core/dataset` | `mpf/dataset.py` + `moonperf/core/dataset` (parity done) | No |
-| Build/run/timeout/exit-code capture | `moonperf/core/host` | `mpf/runner.py` + `moonperf/core/host` (partial) | Only the OS primitive (see boundaries) |
-| Correctness gate | `moonperf/core/verify` | `mpf/runner.py` | No |
-| Samples, statistics, CV, setup fraction | `moonperf/core/measure` | `mpf/runner.py` + `moonperf/core/measure` (partial) | No |
-| Result artifact assembly and validation | `moonperf/core/artifact` | `mpf/runner.py` | No (cross-check may be Python) |
-| Markdown report | `moonperf/core/report` | `mpf/report.py` | No |
-| Experiment orchestration | `moonperf/core/runner` | `mpf/runner.py` | No |
+| Build/run/timeout/exit-code capture | `moonperf/core/host` | `moonperf/core/host` (implemented) | Only the OS primitive (see boundaries) |
+| Correctness gate | `moonperf/core/verify` | `moonperf/core/verify` (implemented) | No |
+| Samples, statistics, CV, setup fraction | `moonperf/core/measure` | `moonperf/core/measure` (implemented) | No |
+| Result artifact assembly and validation | `moonperf/core/artifact` | `moonperf/core/artifact` (implemented) | No (cross-check may be Python) |
+| Markdown report | `moonperf/core/report` | `moonperf/core/report` (implemented) | No |
+| Experiment orchestration | `moonperf/core/runner` | `moonperf/core/runner` (implemented) | No |
 | Workload implementations | `workloads/.../implementations` | MoonBit and Rust drafts | Yes, by definition |
 | Schema validation | `moonperf/core/artifact` (targeted) | Python `jsonschema` | Cross-check only |
 | Source metadata | git command | Python subprocess | Yes, as an external tool |
@@ -294,7 +294,7 @@ The Python code is not thrown away and is not extended:
 | --- | --- | --- |
 | M0 | Freeze `mpf/` except for two blocking oracle fixes (path resolution, reference-first correctness). | One green oracle artifact, or a documented host-instability verdict. |
 | M1 | Port pure functions to MoonBit: manifest model, dataset generator, SHA-256, statistics, artifact model, report. | Dataset, SHA-256 and manifest/list/validate are done; statistics, artifact and report remain. |
-| M2 | Port the host primitive and runner orchestration. | Host primitive is done with an orphan test; the runner, artifact and report are next. |
+| M2 | Port the host primitive and runner orchestration. | Done: the MoonBit runner produces a schema-valid artifact and report; host stability and P1.3 checks remain. |
 | M3 | Switch the CLI to MoonBit; keep Python only under `tools/legacy-python/` for schema cross-checks. | An experiment runs with Python absent from `PATH`. |
 
 No step is a big-bang rewrite. Each step has a contract test against the
