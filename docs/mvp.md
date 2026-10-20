@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. The MoonBit core now owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. Remaining before acceptance: toolchain/build-log metadata, optimizer-elimination check, timeout-as-invalid-artifact, and a stable host.
+**Status:** P1 target, reviewed 2026-10-20. The MoonBit core now owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. Clean builds, toolchain/build-log metadata, the shared `f64` path and optimizer barriers are in. Remaining before acceptance: timeout-as-invalid-artifact, the `K=1`/`K=10` scaling diagnostic, the full A1–A17 suite, and a stable host.
 
 ## Definition
 

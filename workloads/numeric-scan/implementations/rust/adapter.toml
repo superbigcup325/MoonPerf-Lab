@@ -1,4 +1,4 @@
 schema_version = 1
 language = "Rust"
-summary = "Reference: `&[f64]` slice, sequential scalar loop, rustc --edition 2021 -C opt-level=3 -C target-cpu=native"
+summary = "Reference: Vec<f64> load, `&[f64]` scalar scan, black_box barrier across repeats; rustc --edition 2021 -C opt-level=3 -C target-cpu=native"
 build_dir = "target"

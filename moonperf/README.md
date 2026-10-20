@@ -1,8 +1,10 @@
 # moonperf — MoonBit core
 
-**Status:** P1.2 complete. The MoonBit core owns the experiment loop:
+**Status:** P1.3 in progress. The MoonBit core owns the experiment loop:
 dataset, manifest, statistics, host primitive, correctness gate, runner,
-artifact and report. The Python harness remains the independent oracle.
+artifact and report. Clean builds, toolchain/build-log metadata, the shared
+`f64` load path and optimizer barriers are in; timeout-as-invalid-artifact,
+the K scaling diagnostic and a stable host remain.
 
 ## Build and test
 

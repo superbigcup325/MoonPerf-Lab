@@ -95,7 +95,11 @@ fn main() {
 
     let mut result = (0.0, 0.0, 0.0, 0.0, 0);
     for _ in 0..parsed.repeat {
-        result = scan(&data, threshold);
+        // Keep the kernel from being hoisted out of the repeat loop while
+        // preserving the same threshold value on every iteration.
+        let iteration_threshold = std::hint::black_box(threshold);
+        result = scan(&data, iteration_threshold);
+        result = std::hint::black_box(result);
     }
 
     // `{:?}` prints a round-trippable float and keeps an integral value as

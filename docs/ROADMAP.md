@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; the MoonBit core owns the full loop; host stability/acceptance remains | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; full MoonBit loop + P1.3 fairness/metadata; host stability and timeout/scaling remain | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -294,11 +294,20 @@ stable host.
 
 ### P1.3 · Numeric-scan fairness and acceptance
 
+**P1.3-A (done 2026-10-20):** both implementations load an `f64` array before
+the kernel; MoonBit checks `length % 8 == 0`; both use an optimizer barrier
+(`Bench::keep` / `black_box`); the runner performs clean builds via `build_dir`
+and records toolchain and build-log SHA-256 in the artifact.
+
+**P1.3-B (next):** timeout-as-invalid-artifact, the `K = 1` vs `K = 10`
+scaling diagnostic, a stable host, the full A1–A17 acceptance suite and a
+committed `ok` artifact.
+
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.
 - Add the length-multiple-of-8 check and make the unsafe accessor explicit.
 - Confirm JSON output types and round-trippable floats.
-- Run the full acceptance suite A1–A16 in [`mvp.md`](mvp.md#acceptance-tests).
+- Run the full acceptance suite A1–A17 in [`mvp.md`](mvp.md#acceptance-tests).
 - Record a committed `ok` artifact and generated report on the controlled host.
 - Add fault-injection evidence to the workload README.
 

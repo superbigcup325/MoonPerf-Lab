@@ -48,11 +48,11 @@ fn format_double(value : Double) -> String {
 /// One pass over the dataset. The first element seeds min/max/sum so the
 /// result does not depend on a sentinel large enough for the data.
 fn scan(
-  view : BytesView,
+  values : Array[Double],
   n : Int32,
-  threshold : Double
-) -> (Double, Double, Double, Double, Int) {
-  let first = view.unsafe_read_uint64_le(0).reinterpret_as_double()
+  threshold : Double,
+) -> (Double, Double, Double, Double, Int32) {
+  let first = values.unsafe_get(0)
   let mut sum = first
   let mut sumsq = first * first
   let mut minimum = first
@@ -60,7 +60,7 @@ fn scan(
   let mut count_above = if first > threshold { 1 } else { 0 }
   let mut index = 1
   while index < n {
-    let value = view.unsafe_read_uint64_le(index * 8).reinterpret_as_double()
+    let value = values.unsafe_get(index)
     sum = sum + value
     sumsq = sumsq + value * value
     if value < minimum {
@@ -92,8 +92,20 @@ fn main {
     _ => abort("cannot read " + input)
   }
   let view = raw.exact_view()
+  if view.length() % 8 != 0 {
+    abort("dataset size must be a multiple of 8 bytes")
+  }
   let n : Int32 = view.length() / 8
+  let values : Array[Double] = Array::make(n, 0.0)
+  let mut load_index : Int32 = 0
+  while load_index < n {
+    values[load_index] = view
+      .unsafe_read_uint64_le(load_index * 8)
+      .reinterpret_as_double()
+    load_index = load_index + 1
+  }
 
+  let bench = @bench.Bench()
   let mut sum = 0.0
   let mut sumsq = 0.0
   let mut minimum = 0.0
@@ -102,10 +114,9 @@ fn main {
   let mut iteration = 0
   while iteration < repeat {
     let (last_sum, last_sumsq, last_min, last_max, last_count) = scan(
-      view,
-      n,
-      threshold,
+      values, n, threshold,
     )
+    bench.keep(last_sum)
     sum = last_sum
     sumsq = last_sumsq
     minimum = last_min
@@ -115,12 +126,24 @@ fn main {
   }
 
   let json = "{\n" +
-    "  \"n\": " + n.to_string() + ",\n" +
-    "  \"sum\": " + format_double(sum) + ",\n" +
-    "  \"sumsq\": " + format_double(sumsq) + ",\n" +
-    "  \"min\": " + format_double(minimum) + ",\n" +
-    "  \"max\": " + format_double(maximum) + ",\n" +
-    "  \"count_above\": " + count_above.to_string() + "\n" +
+    "  \"n\": " +
+    n.to_string() +
+    ",\n" +
+    "  \"sum\": " +
+    format_double(sum) +
+    ",\n" +
+    "  \"sumsq\": " +
+    format_double(sumsq) +
+    ",\n" +
+    "  \"min\": " +
+    format_double(minimum) +
+    ",\n" +
+    "  \"max\": " +
+    format_double(maximum) +
+    ",\n" +
+    "  \"count_above\": " +
+    count_above.to_string() +
+    "\n" +
     "}\n"
   @fs.write_string_to_file(output, json) catch {
     _ => abort("cannot write " + output)

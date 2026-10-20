@@ -1,6 +1,7 @@
 ///|
 priv struct RunState {
   implementation : @manifest.Implementation
+  toolchain : String?
   build : @artifact.BuildRecord
   mut correctness : @artifact.CorrectnessRecord
   samples_ns : Array[Int64]
@@ -210,6 +211,27 @@ async fn clean_build_dir(implementation : @manifest.Implementation) -> Unit {
 }
 
 ///|
+async fn toolchain_for(implementation : @manifest.Implementation) -> String? {
+  let script = join(implementation.directory, "describe.sh")
+  if !(@fs.exists(script) catch { _ => false }) {
+    return None
+  }
+  let text = capture_stdout("./describe.sh", [], implementation.directory)
+  if text.length() == 0 {
+    return None
+  }
+  let parsed = @json.parse(text) catch { _ => return None }
+  match parsed {
+    Json::Object(object) =>
+      match object.get("toolchain") {
+        Some(Json::String(toolchain)) => Some(toolchain)
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
 async fn build_implementation(
   implementation : @manifest.Implementation,
   out_dir : String,
@@ -238,12 +260,17 @@ async fn build_implementation(
     error =>
       raise @host.error("build failed to start: " + @host.message_of(error))
   }
+  let log = read_text(stdout_path) + read_text(stderr_path)
   {
     ok: !result.timed_out && result.exit_code == 0,
     skipped: false,
     command: Some("./build.sh"),
     duration_ms: result.wall_us / 1000.0,
-    log_sha256: None,
+    log_sha256: if log.length() > 0 {
+      Some(@dataset.sha256_hex(@utf8.encode(log)))
+    } else {
+      None
+    },
   }
 }
 
@@ -520,6 +547,7 @@ pub async fn run_workload(
     }
     states.push({
       implementation,
+      toolchain: toolchain_for(implementation),
       build,
       correctness: {
         ok: false,
@@ -692,7 +720,7 @@ pub async fn run_workload(
       id: state.implementation.id,
       language: state.implementation.language,
       reference: state.implementation.id == reference_id,
-      toolchain: None,
+      toolchain: state.toolchain,
       build: state.build,
       correctness: state.correctness,
       samples_ns: state.samples_ns,
