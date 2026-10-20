@@ -1,0 +1,21 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/measure"
+
+// Values
+pub fn summarize(Array[Int64]) -> Summary?
+
+// Errors
+
+// Types and methods
+pub struct Summary {
+  count : Int32
+  min_ns : Int64
+  median_ns : Double
+  mean_ns : Double
+  stdev_ns : Double
+  cv : Double
+}
+
+// Type aliases
+
+// Traits
