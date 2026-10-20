@@ -95,7 +95,7 @@ def render_report(artifact: dict[str, Any], question: str) -> str:
         f"| CPU | {environment['cpu']['model']} ({environment['cpu']['logical_cpus']} logical CPUs) |",
         f"| CPU governor | {environment['cpu'].get('governor') or 'not recorded'} |",
         f"| Memory | {environment['memory_bytes'] / 1024**3:.1f} GiB |",
-        f"| Harness | mpf {experiment['harness']['version']} on Python {experiment['harness']['python']} |",
+        f"| Harness | {_harness_label(experiment['harness'])} |",
         f"| Source | commit `{experiment['source']['commit'] or 'unknown'}`"
         f"{' (dirty)' if experiment['source']['dirty'] else ''}"
         f" on `{experiment['source']['branch'] or 'unknown'}` |",
@@ -240,6 +240,17 @@ def render_report(artifact: dict[str, Any], question: str) -> str:
         ]
     )
     return "\n".join(lines)
+
+
+def _harness_label(harness: dict[str, Any]) -> str:
+    """Render new and legacy harness metadata without assuming Python."""
+
+    name = harness.get("name", "mpf")
+    version = harness.get("version", "unknown")
+    runtime = harness.get("runtime")
+    if runtime is None and "python" in harness:
+        runtime = f"Python {harness['python']}"
+    return f"{name} {version}" + (f" on {runtime}" if runtime else "")
 
 
 def _params(params: dict[str, Any]) -> str:

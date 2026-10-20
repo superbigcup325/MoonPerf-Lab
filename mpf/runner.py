@@ -618,8 +618,9 @@ def run_workload(
                 "started_at": _isoformat(started_at),
                 "finished_at": _isoformat(utc_now()),
                 "harness": {
+                    "name": "mpf",
                     "version": __version__,
-                    "python": platform.python_version(),
+                    "runtime": f"Python {platform.python_version()}",
                 },
                 "source": source,
                 "workload": {

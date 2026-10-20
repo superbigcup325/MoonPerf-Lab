@@ -166,7 +166,7 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
 - One JSON file per experiment, validated against
   `schemas/result.schema.json`.
 - It contains experiment metadata, one entry per implementation, raw samples,
-  the setup baseline, comparisons and a verdict.
+  the per-implementation setup baseline, comparisons and a verdict.
 - `harness` is language-neutral: required `name` and `version`, optional
   `runtime` (for example `moon 0.1.20261016 / native`). The legacy `python`
   field remains optional for old artifacts but is not written by the MoonBit

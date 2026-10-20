@@ -18,7 +18,7 @@ def valid_result() -> dict:
             "id": "2026-10-20T000000Z-numeric-scan",
             "started_at": "2026-10-20T00:00:00Z",
             "finished_at": "2026-10-20T00:01:30Z",
-            "harness": {"version": "0.1.0", "python": "3.12.0"},
+            "harness": {"name": "mpf", "version": "0.1.0", "runtime": "Python 3.12.0"},
             "source": {"commit": "0" * 40, "dirty": False, "branch": "main"},
             "workload": {
                 "name": "numeric-scan",
@@ -138,6 +138,37 @@ class ResultSchemaTest(unittest.TestCase):
         result = valid_result()
         implementation = result["implementations"][0]
         implementation["correctness"]["ok"] = False
+        self.assertTrue(validate_instance(result, "result.schema.json"))
+
+    def test_legacy_python_harness_is_accepted(self) -> None:
+        result = valid_result()
+        result["experiment"]["harness"] = {
+            "version": "0.1.0",
+            "python": "3.12.0",
+        }
+        self.assertEqual(validate_instance(result, "result.schema.json"), [])
+
+    def test_harness_needs_a_name_or_a_legacy_python_field(self) -> None:
+        result = valid_result()
+        result["experiment"]["harness"] = {"version": "0.1.0"}
+        self.assertTrue(validate_instance(result, "result.schema.json"))
+
+    def test_setup_baseline_is_accepted(self) -> None:
+        result = valid_result()
+        result["implementations"][0]["setup"] = {
+            "inner_repeats": 0,
+            "wall_ns": 2_500_000,
+            "fraction": 0.08,
+        }
+        self.assertEqual(validate_instance(result, "result.schema.json"), [])
+
+    def test_setup_baseline_must_be_load_only(self) -> None:
+        result = valid_result()
+        result["implementations"][0]["setup"] = {
+            "inner_repeats": 1,
+            "wall_ns": 2_500_000,
+            "fraction": 0.08,
+        }
         self.assertTrue(validate_instance(result, "result.schema.json"))
 
     def test_unknown_field_is_rejected(self) -> None:

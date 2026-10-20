@@ -316,9 +316,10 @@ reproduction record; green CI.
 These are the only schema/protocol changes P1 needs; they are additive and keep
 old artifacts readable.
 
-- `schemas/result.schema.json`: `experiment.harness` requires `name` and
-  `version`, accepts optional `runtime`, and keeps legacy `python` optional;
-  `experiment.measurement` gains an optional `setup` object.
+- `schemas/result.schema.json`: `experiment.harness` requires `version`,
+  requires either `name` (new) or the legacy `python`, and accepts optional
+  `runtime`; each implementation gains an optional `setup` object
+  (`inner_repeats = 0`, `wall_ns`, `fraction`).
 - `schemas/adapter.schema.json`: optional `build_dir` for the clean-build rule.
 - `experiment-protocol.md` §5: `run.sh --repeat 0` is the setup baseline.
 - `experiment-protocol.md` §6: the reference is verified first.

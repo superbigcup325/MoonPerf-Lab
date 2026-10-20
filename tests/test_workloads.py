@@ -112,6 +112,14 @@ class AdapterSchemaTest(unittest.TestCase):
         adapter = {"schema_version": 1, "language": "Rust", "summary": "reference"}
         self.assertEqual(validate_instance(adapter, "adapter.schema.json"), [])
 
+    def test_optional_build_dir_passes(self) -> None:
+        adapter = {
+            "schema_version": 1,
+            "language": "MoonBit",
+            "build_dir": "_build",
+        }
+        self.assertEqual(validate_instance(adapter, "adapter.schema.json"), [])
+
 
 class WorkloadSemanticsTest(unittest.TestCase):
     def _make_workload(self, root: Path) -> Path:

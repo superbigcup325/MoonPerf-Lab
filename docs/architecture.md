@@ -225,9 +225,10 @@ things:
   optional `runtime`; the legacy `python` field becomes optional and is not
   written by the MoonBit core. Old artifacts remain readable under
   `schema_version = 1`; new artifacts do not depend on Python.
-- `experiment.measurement` gains an optional `setup` object with
-  `inner_repeats = 0`, `wall_ns`, and `fraction`. The comparison metric stays
-  the per-iteration wall time of the measured run.
+- Each `implementations[]` entry gains an optional `setup` object with
+  `inner_repeats = 0`, `wall_ns`, and `fraction`. It is per implementation,
+  because process startup and input loading differ by language and runtime. The
+  comparison metric stays the per-iteration wall time of the measured run.
 
 The artifact is validated structurally by the MoonBit core and, during the
 transition, independently by the Python `jsonschema` tool. A disagreement

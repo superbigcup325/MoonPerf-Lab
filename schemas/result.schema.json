@@ -84,15 +84,34 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "version",
-            "python"
+            "version"
+          ],
+          "anyOf": [
+            {
+              "required": [
+                "name"
+              ]
+            },
+            {
+              "required": [
+                "python"
+              ]
+            }
           ],
           "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
             "version": {
               "type": "string"
             },
-            "python": {
+            "runtime": {
               "type": "string"
+            },
+            "python": {
+              "type": "string",
+              "deprecated": true
             }
           }
         },
@@ -430,6 +449,29 @@
               "type": "null"
             }
           ]
+        },
+        "setup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inner_repeats",
+            "wall_ns",
+            "fraction"
+          ],
+          "properties": {
+            "inner_repeats": {
+              "const": 0
+            },
+            "wall_ns": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
         }
       },
       "allOf": [
