@@ -154,11 +154,13 @@ schemas, the workload skeleton, a Python validation harness and a MoonBit
 capability audit are in this repository. The schemas and the CLI are enforced
 by tests and CI, so the protocol already has teeth.
 
-**P1 is in progress, not accepted.** There is a Python runner draft that can
-build, verify and measure in principle, but it has two blocking defects, no
-clean-build enforcement, no setup baseline and no valid artifact. The MoonBit
-core has not been started. The current framework is Python; this is the
-architecture gap the MVP closes.
+**P1 is in progress, not accepted.** P1.0-A fixed the two blocking runner
+defects with regression tests and produced a temporary `ok` oracle artifact at
+`K = 50` (CV 2.07 % Rust, 2.36 % MoonBit) under ignored `results/tmp/`. It is
+not an artifact of record: the build was incremental, the setup baseline and
+optimizer-elimination checks are still missing, and the MoonBit core has not
+been started. The current framework is Python; this is the architecture gap the
+MVP closes.
 
 **No performance numbers are published yet, and there is no leaderboard.** The
 first complete experiment — `numeric-scan` in MoonBit and Rust on a recorded

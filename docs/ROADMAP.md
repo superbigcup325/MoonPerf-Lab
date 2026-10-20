@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; Python scaffold only, no accepted artifact | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; P1.0-A oracle run done, MoonBit core next | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -52,7 +52,7 @@ dependency that has not been proven on this toolchain.
 | Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | Result schema still requires a Python `harness.python` field |
 | Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml`; `mpf validate` | `status = draft`; no accepted run |
 | Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 47 tests | Not the target core |
-| Python bootstrap: run/report | Partial | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` (uncommitted) | Two blocking defects; no accepted artifact |
+| Python bootstrap: run/report | Partial | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Two blocking defects fixed in P1.0-A; no accepted artifact |
 | MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
 | Rust reference implementation | Partial | `workloads/numeric-scan/implementations/rust/` | CV above gate on this host; setup semantics differ |
 | C reference | Not started | Workload README mentions it | Deferred to P2 |
@@ -60,9 +60,9 @@ dependency that has not been proven on this toolchain.
 | Dataset generator parity | Needs verification | Python generator + recorded SHA | MoonBit generator not written |
 | Process-group timeout | Partial | Python uses `start_new_session`; MoonBit async timeout leaves grandchildren; `setsid`/`kill` workaround verified | Implement it in the MoonBit core with an orphan test |
 | Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
-| Controlled measurement host | Partial | Laptop on `powersave`; CV 7.57 % | Establish a host profile or rerun on a controlled host |
+| Controlled measurement host | Partial | `K=50` on the `powersave` laptop: CV 2.07 % Rust, 2.36 % MoonBit; `ok` oracle artifact under `results/tmp/` | Still not a controlled profile; setup/clean/hoisting checks pending |
 | CI | Partial | Python spec tests only | No MoonBit/Rust build, no correctness fixtures |
-| Committed valid artifact | Not started | The invalid smoke attempt was removed; no artifact remains | Produce one `ok` artifact |
+| Committed valid artifact | Not started | A dirty-tree `ok` oracle artifact exists under ignored `results/tmp/`; no committed artifact | Produce one accepted `ok` artifact after clean/setup checks |
 | Reproducibility docs | Partial | README quick start; protocol §10 | Update after the MoonBit CLI exists |
 | Hackathon evidence | Partial | One commit + uncommitted P1 work | Incremental commits, runnable demo, MoonBit-first proof |
 
@@ -111,7 +111,9 @@ first tasks, not reasons to rewrite the architecture.
    runs belong under `results/tmp/`.
 10. **The host is noisy.** The recorded host is a 12th Gen i5-12500H on
     `powersave`; the Rust sample set had CV 7.57 % at `K = 10`, above `0.05`.
-    The MVP needs a controlled host, not a relaxed gate.
+    Raising `K` to 50 brought the CV to 2.07 % (Rust) and 2.36 % (MoonBit) in a
+    dirty-tree oracle run, but that is a diagnostic, not a controlled-host
+    result. The MVP still needs a controlled host profile, not a relaxed gate.
 11. **The docs are stale.** `README.md`, `AGENTS.md`,
     `workloads/README.md` and `results/README.md` describe a pre-runner state.
     This revision updates them.
@@ -221,6 +223,14 @@ section is the phase plan.
 
 **Deliverable:** a green oracle artifact, or a documented host-instability
 verdict; a short note in the roadmap on what was learned.
+
+**P1.0-A result (2026-10-20):** the two fixes are in and covered by regression
+tests. A `K = 50` run on the `powersave` host produced an `ok` oracle artifact
+under ignored `results/tmp/` (CV 2.07 % Rust, 2.36 % MoonBit). It is not an
+artifact of record: the tree is dirty, the build was incremental, the setup
+baseline and optimizer-elimination checks are not implemented, and the two
+implementations still differ in setup semantics. It is enough to validate the
+contract and proceed to P1.1.
 
 **Estimate:** 1–2 days.
 
