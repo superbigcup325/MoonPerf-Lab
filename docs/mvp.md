@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** target for P1, reviewed 2026-10-20. Not implemented yet.
+**Status:** P1 target, reviewed 2026-10-20. P1.1 is in progress: the MoonBit dataset + CLI slice is done; the runner, artifact and report are still Python.
 
 ## Definition
 
@@ -99,7 +99,9 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
   the committed manifest. The current expected SHA-256 for
   `count=1000000, seed=20261020, min=-1.0, max=1.0` is
   `fa49700b3b7bac4b840d944268bdc82291906c703a83a04cc57917c87a0a8fc2`;
-  it is a golden test, not a value to hard-code into the generator.
+  it is a golden test, not a value to hard-code into the generator. The
+  MoonBit CLI reproduced it on 2026-10-20, and `cmp` confirmed byte-identical
+  output against the Python generator.
 
 ### F4. Build
 

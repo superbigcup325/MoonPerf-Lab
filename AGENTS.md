@@ -38,7 +38,7 @@ schemas/adapter.schema.json  implementation adapter contract
 schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
 workloads/numeric-scan/      first workload; MoonBit + Rust drafts
-moonperf/                    MoonBit framework core (target; not created yet)
+moonperf/                    MoonBit core: dataset + CLI skeleton (P1.1)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
 tests/                       unittest suite for the specification
@@ -70,12 +70,14 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-Once `moonperf/` exists, the authoritative checks are the MoonBit ones:
+The MoonBit core now exists as a dataset + CLI slice. Its authoritative checks
+run from `moonperf/`:
 
 ```bash
-moon check --deny-warn
-moon test
-moon build --release --target native
+cd moonperf
+moon check --deny-warn --target native
+moon test --target native
+moon fmt --check
 ```
 
 There is no accepted benchmark runner yet (P1). The Python `mpf run` draft is

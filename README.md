@@ -156,11 +156,10 @@ by tests and CI, so the protocol already has teeth.
 
 **P1 is in progress, not accepted.** P1.0-A fixed the two blocking runner
 defects with regression tests and produced a temporary `ok` oracle artifact at
-`K = 50` (CV 2.07 % Rust, 2.36 % MoonBit) under ignored `results/tmp/`. It is
-not an artifact of record: the build was incremental, the setup baseline and
-optimizer-elimination checks are still missing, and the MoonBit core has not
-been started. The current framework is Python; this is the architecture gap the
-MVP closes.
+`K = 50` (CV 2.07 % Rust, 2.36 % MoonBit) under ignored `results/tmp/`. P1.1-A
+added the first MoonBit core slice: a dataset generator and CLI that reproduces
+the numeric-scan bytes and the golden SHA-256. The runner, report and artifact
+core are still Python, and no artifact of record exists yet.
 
 **No performance numbers are published yet, and there is no leaderboard.** The
 first complete experiment — `numeric-scan` in MoonBit and Rust on a recorded
@@ -176,6 +175,7 @@ What exists today:
 | [`schemas/`](schemas/) | JSON Schema for workload manifests, adapters and result artifacts |
 | [`workloads/numeric-scan/`](workloads/numeric-scan/) | First workload, specified; MoonBit and Rust implementations drafted |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
+| [`moonperf/`](moonperf/) | MoonBit core start: dataset generator + CLI slice; runner/report pending |
 | [`tests/`](tests/) | 47 Python tests for the specification and runner fixtures |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases, status, gaps, risks and acceptance |
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
@@ -223,7 +223,7 @@ mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
 results/                       committed experiment artifacts (none valid yet)
 pyproject.toml                 Python bootstrap package
-moonperf/                      MoonBit framework core (target; not created yet)
+moonperf/                      MoonBit core: dataset + CLI skeleton (P1.1)
 ```
 
 ## Quick start
@@ -249,8 +249,16 @@ python3 -m venv .venv
 `mpf run` exists as a draft and is not part of the quick start until P1
 acceptance. See the P1 status in [`docs/ROADMAP.md`](docs/ROADMAP.md#current-status).
 
+The MoonBit core currently has a dataset slice:
+
+```bash
+cd moonperf
+moon check --deny-warn --target native
+moon test --target native
+```
+
 The target CLI is a MoonBit native binary with the same command names. Its
-build and test commands will be added when `moonperf/` exists.
+runner, report and artifact commands are still being ported.
 
 ## The first experiment: numeric scan
 
@@ -308,7 +316,7 @@ earlier would delay the first trustworthy measurement.
 | Phase | Outcome | Status |
 | --- | --- | --- |
 | **P0 · Audit and contract** | Protocol, schemas, skeleton, capability probe, consistent docs | In place (2026-10-20) |
-| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; not accepted |
+| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; P1.0-A and the MoonBit dataset slice are in place |
 | **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | After MVP |
 | **P3 · Automation** | History, CI correctness, noise-aware regression detection | After P2 |
 | **P4 · Research** | Profiling, bottleneck attribution, experiment matrices, cross-project reuse | After P2/P3 |

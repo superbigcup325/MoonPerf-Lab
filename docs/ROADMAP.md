@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; P1.0-A oracle run done, MoonBit core next | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; P1.0-A and the MoonBit dataset slice are in place | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -56,8 +56,8 @@ dependency that has not been proven on this toolchain.
 | MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
 | Rust reference implementation | Partial | `workloads/numeric-scan/implementations/rust/` | CV above gate on this host; setup semantics differ |
 | C reference | Not started | Workload README mentions it | Deferred to P2 |
-| MoonBit framework core | Not started | — | The main P1 work |
-| Dataset generator parity | Needs verification | Python generator + recorded SHA | MoonBit generator not written |
+| MoonBit framework core | Partial | `moonperf/core/dataset` + `moonperf/cli`; 1M golden SHA and byte parity | Manifest model, report, artifact and runner still to port |
+| Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test; port the cache/identity path |
 | Process-group timeout | Partial | Python uses `start_new_session`; MoonBit async timeout leaves grandchildren; `setsid`/`kill` workaround verified | Implement it in the MoonBit core with an orphan test |
 | Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
 | Controlled measurement host | Partial | `K=50` on the `powersave` laptop: CV 2.07 % Rust, 2.36 % MoonBit; `ok` oracle artifact under `results/tmp/` | Still not a controlled profile; setup/clean/hoisting checks pending |
@@ -236,9 +236,10 @@ contract and proceed to P1.1.
 
 ### P1.1 · MoonBit core skeleton
 
-**P1.1-A (first MoonBit task):** generate the numeric-scan dataset in MoonBit
-and match the recorded SHA-256 byte-for-byte. This proves fs, TOML, 64-bit
-arithmetic, little-endian `f64` and hashing before the runner is ported.
+**P1.1-A (done 2026-10-20):** generate the numeric-scan dataset in MoonBit and
+match the recorded SHA-256 byte-for-byte. The CLI parses the real
+`workload.toml`, writes the 8,000,000-byte file and prints the identity; `cmp`
+and the golden `moon test` both pass.
 
 - Create the `moonperf/` MoonBit module and the `mpf` CLI skeleton.
 - Port the manifest model and validation; use the pinned TOML parser.
@@ -249,8 +250,9 @@ arithmetic, little-endian `f64` and hashing before the runner is ported.
 - Keep the Python implementation as a cross-check: same dataset hash, same
   summary from a fixture, same report from a fixture artifact.
 
-**Deliverable:** a MoonBit library and CLI that validate/list and render a
-report from a fixture artifact, with golden tests.
+**Deliverable:** the dataset/CLI slice is in place. The manifest model,
+validate/list, statistics and report are still to port; the slice's golden
+tests pass.
 
 **Estimate:** 5–7 days.
 
@@ -569,7 +571,7 @@ least one external consumer.
 | Hackathon rules change | 2026-09 snapshot; later monthly round may differ | Medium / medium | Cite verified source; re-check the official charter; no invented gates | Read the current charter before submission | P0/P1 |
 | Reproducibility depends on network | `moon`/`cargo` registry; toolchains | Medium / medium | Pin versions; record; optional vendor/cache; clean-env test | Fresh clone test with recorded steps | P1 |
 | macOS/Windows diverge | `setsid` Linux-only; async supports Linux/macOS | Medium / low | Linux MVP; document unsupported targets | Platform matrix; no claims for untested targets | P1/P2 |
-| Dataset parity | Python generator + MoonBit port | Medium / high | Golden SHA and byte equality test | `cmp` on generated files; SHA match | P1 |
+| Dataset parity | Golden SHA and `cmp` passed on 2026-10-20 | Low | Keep the golden test; re-run if the generator or dependency changes | `moon test`; `cmp` | P1 |
 | Invalid artifact reaches results | A scratch artifact was found under `results/` (removed) | Was present / medium | Keep scratch under `results/tmp/`; `results/tmp-*` ignored; validation in CI | Clean tree; CI check | P0 |
 
 ## Hackathon rule basis
@@ -658,16 +660,22 @@ measurement gate that the MoonBit core must reproduce. The small P1.0-B
 contract checks are the only other Python work; the Python architecture is not
 extended.
 
-The first **MoonBit** task is then P1.1-A: regenerate the numeric-scan dataset
-in MoonBit and match the recorded SHA-256 byte-for-byte. That proves fs, TOML,
-64-bit arithmetic, little-endian `f64` and hashing before the runner is ported.
+The first **MoonBit** task, P1.1-A, is done: the dataset is generated in
+MoonBit, the CLI parses the real manifest, and the bytes and SHA-256 match the
+Python generator. The next MoonBit task is the manifest model and the
+report/artifact port.
 
 ## Plan revision log
 
 - **2026-10-20:** Re-audited the repository; added the MoonBit-first
   architecture, MVP specification and implementation boundaries; corrected the
   phase status, estimates and gaps; added the verified capability matrix, the
-  process-group finding and the hackathon rule basis. No harness code changes.
+  process-group finding and the hackathon rule basis.
+- **2026-10-20 (execution):** fixed the two blocking Python runner defects
+  (absolute paths, reference-first) with regression tests; tuned numeric-scan
+  to `K=50`; generalized the result harness/setup contract and added
+  `build_dir`; added the MoonBit dataset + CLI slice with a passing 1M golden
+  hash and byte parity against the Python generator.
 
 ## Documentation change log (2026-10-20)
 

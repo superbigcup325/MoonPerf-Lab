@@ -1,9 +1,10 @@
 # Architecture
 
-**Status:** target architecture for P1, reviewed 2026-10-20. The current
-repository still runs on the Python bootstrap described in
-[`ROADMAP.md`](ROADMAP.md#current-status); this document describes what the
-repository must become, not what it already is.
+**Status:** target architecture for P1, reviewed 2026-10-20. The runtime still
+uses the Python bootstrap described in
+[`ROADMAP.md`](ROADMAP.md#current-status); the first MoonBit slice
+(`moonperf/core/dataset` and a small CLI) now exists. This document describes
+what the repository must become, not what it already is.
 
 MoonPerf Lab is a MoonBit-first experiment framework. The framework core owns
 the experiment model, manifests, dataset generation, process orchestration,
@@ -28,7 +29,7 @@ deliverable.
 ## Target module map
 
 ```
-moonperf/                         MoonBit module (target; does not exist yet)
+moonperf/                         MoonBit module (created in P1.1; dataset + CLI only)
   moon.mod
   core/
     manifest/                     workload.toml + adapter.toml -> typed model
@@ -50,7 +51,9 @@ tools/legacy-python/              temporary oracle; never on the runtime path
 
 The current `mpf/` package is the Python bootstrap. It is useful as a
 specification oracle and as a source of test fixtures, but it is not the target
-core and must not grow new experiment features. See
+core and must not grow new experiment features. The first MoonBit slice
+(`moonperf/core/dataset` plus `moonperf/cli`) already reproduces the dataset
+bytes and the golden SHA-256. See
 [Migration](#migration-from-the-python-bootstrap).
 
 ## Data flow
@@ -80,7 +83,7 @@ function of the artifact. Nothing in the report is typed by hand.
 | Capability | Target owner | Current owner | May live outside MoonBit? |
 | --- | --- | --- | --- |
 | Manifest parsing and semantic validation | `moonperf/core/manifest` | `mpf/specs.py` | No |
-| Dataset generation and identity | `moonperf/core/dataset` | `mpf/dataset.py` | No |
+| Dataset generation and identity | `moonperf/core/dataset` | `mpf/dataset.py` + `moonperf/core/dataset` (parity done) | No |
 | Build/run/timeout/exit-code capture | `moonperf/core/host` | `mpf/runner.py` | Only the OS primitive (see boundaries) |
 | Correctness gate | `moonperf/core/verify` | `mpf/runner.py` | No |
 | Samples, statistics, CV, setup fraction | `moonperf/core/measure` | `mpf/runner.py` | No |
@@ -119,7 +122,7 @@ toolchain versions.
 | Timeout with cancellation | Verified | `@async.with_timeout_opt` | 300 ms timeout returned `None` at ~301 ms |
 | Capture stdout/stderr | Verified | `@process.redirect_to_file` | File capture worked; create a fresh redirect per invocation |
 | Process-group timeout | **Not provided by MoonBit** | `setsid -w` + `kill -KILL -<pid>` | Direct async timeout leaves grandchildren alive (two `sleep` processes survived a 300 ms timeout). The `setsid` wrapper made PID = PGID = SID; `kill -KILL -- -<pid>` killed the whole group. |
-| SHA-256 | **Not yet verified** | Candidate packages only | `gmlewis/sha256`, `shu-kitamura/sha256`; a small MoonBit module with FIPS test vectors is also acceptable |
+| SHA-256 | Verified | `moonbitlang/x/crypto` | `@crypto.sha256` + `bytes_to_hex_string`; the 1M-element numeric-scan dataset matches `fa4970…` |
 | JSON Schema validation | **Not yet verified** | Candidate packages only | `colmugx/json-schema`, `moonbitstack/moonschema`; a targeted validator plus a Python cross-check is the fallback |
 | Async concurrency / task groups | API present; not used for measurement | `@async.with_task_group` | Parallel samples would contend for CPU, memory and caches; the MVP runs samples sequentially |
 | Cross-platform | Linux x86_64 verified only | — | macOS, Windows and wasm are not verified; see the platform matrix in `implementation-boundaries.md` |
@@ -315,15 +318,15 @@ oracle, not a runtime component.
 
 ## Open questions for P1 spikes
 
-1. **SHA-256:** use a vetted MoonBit package or a small in-house module with
-   FIPS 180-4 vectors. The in-house option avoids a dependency; the package
-   option avoids crypto implementation risk. Decide with a one-day spike.
+1. **SHA-256:** resolved for P1. The MoonBit core uses
+   `moonbitlang/x/crypto` and passes the 1M-element golden hash. Keep the test
+   as the guard if the dependency changes.
 2. **JSON Schema validation:** a general MoonBit validator or a targeted
    validator for the three repository schemas plus a Python cross-check.
    Prefer the targeted validator if the schemas stay closed and simple.
-3. **TOML parser:** pin `moonbit-community/toml` and test the repository
-   manifests and malformed inputs. Keep a restricted-parser fallback only if
-   the dependency is rejected.
+3. **TOML parser:** `moonbit-community/toml` parsed the real manifest and the
+   MoonBit CLI uses it. Still add malformed-input tests and a restricted-parser
+   fallback only if the dependency is rejected.
 4. **Process group on macOS:** `setsid` is not available; a native shim or a
    different primitive is required. The MVP is Linux-only, so this is a P2
    decision.
