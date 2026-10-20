@@ -270,6 +270,10 @@ place. Report and artifact are still to port; all MoonBit tests pass.
 child and returns exit code/wall time/stdout/stderr paths. The orphan test
 passes; no `sleep` survives a 200 ms timeout.
 
+**P1.2-B (next):** port the runner orchestration on top of `core/host`:
+clean build, reference-first correctness, warmup/repeats, setup baseline,
+timeout-as-invalid-artifact, result JSON and the Markdown report.
+
 - Implement the process primitive with a new process group, timeout,
   process-group kill, exit-code and stdout/stderr capture. Linux MVP:
   `setsid -w` + `kill -KILL -<pid>`; fallback: a small native shim.

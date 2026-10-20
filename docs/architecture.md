@@ -294,7 +294,7 @@ The Python code is not thrown away and is not extended:
 | --- | --- | --- |
 | M0 | Freeze `mpf/` except for two blocking oracle fixes (path resolution, reference-first correctness). | One green oracle artifact, or a documented host-instability verdict. |
 | M1 | Port pure functions to MoonBit: manifest model, dataset generator, SHA-256, statistics, artifact model, report. | Dataset, SHA-256 and manifest/list/validate are done; statistics, artifact and report remain. |
-| M2 | Port the host primitive and runner orchestration. | MoonBit and Python produce comparable artifacts from the same manifest on the same host. |
+| M2 | Port the host primitive and runner orchestration. | Host primitive is done with an orphan test; the runner, artifact and report are next. |
 | M3 | Switch the CLI to MoonBit; keep Python only under `tools/legacy-python/` for schema cross-checks. | An experiment runs with Python absent from `PATH`. |
 
 No step is a big-bang rewrite. Each step has a contract test against the
