@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. P1.1 is in progress: the MoonBit dataset + CLI slice is done; the runner, artifact and report are still Python.
+**Status:** P1 target, reviewed 2026-10-20. P1.1 is in progress: the MoonBit dataset, manifest and `list`/`validate` CLI are done; the runner, artifact and report are still Python.
 
 ## Definition
 
@@ -82,7 +82,8 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
   closed schemas (or a general MoonBit JSON Schema library if it passes the
   repository cases). The Python `jsonschema` run is the independent oracle.
 - Report `path: message` errors and continue validating other workloads.
-- The Python `mpf validate` remains the independent oracle during the port.
+- The MoonBit `validate` command now checks the real workloads. The Python
+  `mpf validate` remains the independent oracle during the port.
 
 ### F3. Dataset
 

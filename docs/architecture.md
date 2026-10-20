@@ -29,7 +29,7 @@ deliverable.
 ## Target module map
 
 ```
-moonperf/                         MoonBit module (created in P1.1; dataset + CLI only)
+moonperf/                         MoonBit module (created in P1.1; dataset, manifest, CLI)
   moon.mod
   core/
     manifest/                     workload.toml + adapter.toml -> typed model
@@ -82,7 +82,7 @@ function of the artifact. Nothing in the report is typed by hand.
 
 | Capability | Target owner | Current owner | May live outside MoonBit? |
 | --- | --- | --- | --- |
-| Manifest parsing and semantic validation | `moonperf/core/manifest` | `mpf/specs.py` | No |
+| Manifest parsing and semantic validation | `moonperf/core/manifest` | `mpf/specs.py` + `moonperf/core/manifest` (partial) | No |
 | Dataset generation and identity | `moonperf/core/dataset` | `mpf/dataset.py` + `moonperf/core/dataset` (parity done) | No |
 | Build/run/timeout/exit-code capture | `moonperf/core/host` | `mpf/runner.py` | Only the OS primitive (see boundaries) |
 | Correctness gate | `moonperf/core/verify` | `mpf/runner.py` | No |
@@ -293,7 +293,7 @@ The Python code is not thrown away and is not extended:
 | Step | Action | Gate |
 | --- | --- | --- |
 | M0 | Freeze `mpf/` except for two blocking oracle fixes (path resolution, reference-first correctness). | One green oracle artifact, or a documented host-instability verdict. |
-| M1 | Port pure functions to MoonBit: manifest model, dataset generator, SHA-256, statistics, artifact model, report. | Golden tests: same dataset bytes, same summary from a fixture, byte-identical report from a fixture artifact. |
+| M1 | Port pure functions to MoonBit: manifest model, dataset generator, SHA-256, statistics, artifact model, report. | Dataset, SHA-256 and manifest/list/validate are done; statistics, artifact and report remain. |
 | M2 | Port the host primitive and runner orchestration. | MoonBit and Python produce comparable artifacts from the same manifest on the same host. |
 | M3 | Switch the CLI to MoonBit; keep Python only under `tools/legacy-python/` for schema cross-checks. | An experiment runs with Python absent from `PATH`. |
 

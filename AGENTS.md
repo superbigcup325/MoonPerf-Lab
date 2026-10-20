@@ -38,7 +38,7 @@ schemas/adapter.schema.json  implementation adapter contract
 schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
 workloads/numeric-scan/      first workload; MoonBit + Rust drafts
-moonperf/                    MoonBit core: dataset + CLI skeleton (P1.1)
+moonperf/                    MoonBit core: dataset, manifest, list/validate CLI (P1.1)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
 tests/                       unittest suite for the specification

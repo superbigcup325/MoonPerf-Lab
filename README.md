@@ -156,10 +156,11 @@ by tests and CI, so the protocol already has teeth.
 
 **P1 is in progress, not accepted.** P1.0-A fixed the two blocking runner
 defects with regression tests and produced a temporary `ok` oracle artifact at
-`K = 50` (CV 2.07 % Rust, 2.36 % MoonBit) under ignored `results/tmp/`. P1.1-A
-added the first MoonBit core slice: a dataset generator and CLI that reproduces
-the numeric-scan bytes and the golden SHA-256. The runner, report and artifact
-core are still Python, and no artifact of record exists yet.
+`K = 50` (CV 2.07 % Rust, 2.36 % MoonBit) under ignored `results/tmp/`. P1.1
+added the first MoonBit core slices: a dataset generator, a manifest model and
+`list`/`validate` CLI commands that reproduce the numeric-scan bytes and the
+golden SHA-256. The runner, artifact and report core are still Python, and no
+artifact of record exists yet.
 
 **No performance numbers are published yet, and there is no leaderboard.** The
 first complete experiment — `numeric-scan` in MoonBit and Rust on a recorded
@@ -175,7 +176,7 @@ What exists today:
 | [`schemas/`](schemas/) | JSON Schema for workload manifests, adapters and result artifacts |
 | [`workloads/numeric-scan/`](workloads/numeric-scan/) | First workload, specified; MoonBit and Rust implementations drafted |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
-| [`moonperf/`](moonperf/) | MoonBit core start: dataset generator + CLI slice; runner/report pending |
+| [`moonperf/`](moonperf/) | MoonBit core start: dataset, manifest, `list`/`validate` CLI; runner/report pending |
 | [`tests/`](tests/) | 47 Python tests for the specification and runner fixtures |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases, status, gaps, risks and acceptance |
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
@@ -223,7 +224,7 @@ mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
 results/                       committed experiment artifacts (none valid yet)
 pyproject.toml                 Python bootstrap package
-moonperf/                      MoonBit core: dataset + CLI skeleton (P1.1)
+moonperf/                      MoonBit core: dataset + manifest + CLI (P1.1)
 ```
 
 ## Quick start
@@ -255,6 +256,8 @@ The MoonBit core currently has a dataset slice:
 cd moonperf
 moon check --deny-warn --target native
 moon test --target native
+moon run cli --target native -- list ../workloads
+moon run cli --target native -- validate ../workloads
 ```
 
 The target CLI is a MoonBit native binary with the same command names. Its
@@ -316,7 +319,7 @@ earlier would delay the first trustworthy measurement.
 | Phase | Outcome | Status |
 | --- | --- | --- |
 | **P0 · Audit and contract** | Protocol, schemas, skeleton, capability probe, consistent docs | In place (2026-10-20) |
-| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; P1.0-A and the MoonBit dataset slice are in place |
+| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; P1.0-A, dataset, manifest and list/validate are in MoonBit |
 | **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | After MVP |
 | **P3 · Automation** | History, CI correctness, noise-aware regression detection | After P2 |
 | **P4 · Research** | Profiling, bottleneck attribution, experiment matrices, cross-project reuse | After P2/P3 |
