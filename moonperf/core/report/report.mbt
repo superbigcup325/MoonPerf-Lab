@@ -117,7 +117,10 @@ pub fn render(artifact : @artifact.Artifact, question : String) -> String {
     (artifact.environment.memory_bytes / 1073741824L).to_string() +
     " GiB |",
   )
-  line(builder, "| Harness | moonperf 0.1.0 on MoonBit native |")
+  line(
+    builder,
+    "| Harness | moonperf " + artifact.harness_version + " on MoonBit native |",
+  )
   line(
     builder,
     "| Source | commit `" +

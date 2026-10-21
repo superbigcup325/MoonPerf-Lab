@@ -3,6 +3,7 @@ test "artifact serializes the required shape" {
   let summary = @measure.make_summary(1, 10L, 10.0, 10.0, 0.0, 0.0)
   let artifact : Artifact = {
     id: "20261020T000000Z-abcdef123456",
+    harness_version: "0.1.1",
     started_at: "2026-10-20T00:00:00Z",
     finished_at: "2026-10-20T00:01:00Z",
     source: { commit: "abcdef123456", dirty: false, branch: "main", },

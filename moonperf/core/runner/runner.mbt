@@ -921,6 +921,7 @@ pub async fn run_workload(
   let environment = environment_record()
   let artifact : @artifact.Artifact = {
     id: compact + "-" + commit12,
+    harness_version: @artifact.HARNESS_VERSION,
     started_at,
     finished_at,
     source,

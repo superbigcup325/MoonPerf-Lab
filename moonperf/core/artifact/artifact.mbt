@@ -86,8 +86,15 @@ pub(all) struct ComparisonRecord {
 }
 
 ///|
+/// The harness version recorded in every artifact. Bumped when the measurement
+/// or diagnostic behaviour changes; the report renders the artifact's value, so
+/// an older artifact keeps its own version.
+pub const HARNESS_VERSION : String = "0.1.1"
+
+///|
 pub(all) struct Artifact {
   id : String
+  harness_version : String
   started_at : String
   finished_at : String
   source : SourceRecord
@@ -247,7 +254,7 @@ pub fn Artifact::to_json(self : Artifact) -> Json {
               Json::object(
                 Map([
                   ("name", Json::string("moonperf")),
-                  ("version", Json::string("0.1.0")),
+                  ("version", Json::string(self.harness_version)),
                   ("runtime", Json::string("MoonBit native")),
                 ]),
               ),
@@ -630,6 +637,10 @@ pub fn from_json(value : Json) -> Artifact {
   let verdict = parse_object(parse_field(root, "verdict"), "verdict")
   {
     id: parse_string_field(experiment, "id"),
+    harness_version: parse_string_field(
+      parse_object(parse_field(experiment, "harness"), "harness"),
+      "version",
+    ),
     started_at: parse_string_field(experiment, "started_at"),
     finished_at: parse_string_field(experiment, "finished_at"),
     source: parse_source(parse_field(experiment, "source")),
