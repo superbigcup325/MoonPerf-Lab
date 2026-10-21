@@ -6,6 +6,7 @@ import {
 }
 
 // Values
+pub fn from_json(Json) -> Artifact
 
 // Errors
 

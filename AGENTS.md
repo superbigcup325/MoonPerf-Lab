@@ -83,9 +83,8 @@ moon fmt --check
 ```
 
 The MoonBit `run` command produced the first `ok` artifact and implements
-timeout/scaling handling and CI runs; A10 (standalone report command) and
-A16 (remote CI execution) are still incomplete, so it is not yet the accepted
-harness.
+timeout/scaling handling, report regeneration and CI runs; A16 (remote CI
+execution) is still incomplete, so it is not yet the accepted harness.
 The Python `mpf run` draft is only an oracle. Do not claim, quote or commit a
 performance result that was not produced by the accepted harness and recorded
 as a result artifact.

@@ -55,6 +55,15 @@ jobs:
         run: |
           moon check --deny-warn --target native
           moon fmt --check
+      - name: Regenerate the committed report
+        working-directory: moonperf
+        run: |
+          moon run cli --target native -- report \
+            ../results/numeric-scan/20261021T050315Z-9b97abaa17cd.json \
+            --out ../results/tmp/ci-report.md
+          diff -u \
+            ../results/numeric-scan/20261021T050315Z-9b97abaa17cd.md \
+            ../results/tmp/ci-report.md
 
   rust:
     runs-on: ubuntu-latest

@@ -320,7 +320,7 @@ fixture. A clean clone reproduced an `ok` artifact.
 | A7 timeout invalid artifact | Pass | `demo-scan` fixture, `measurement_ok=false` |
 | A8 build failure artifact | Pass | `demo-scan` gamma, `build.ok=false` |
 | A9 missing field error | Pass | verifier unit test reports the missing field |
-| A10 report regeneration | Partial | report is generated; no `report` CLI |
+| A10 report regeneration | Pass | `mpf report` re-renders the committed Markdown byte-for-byte |
 | A11 schema validation | Pass | `mpf validate --result` |
 | A12 MoonBit validator | Pass | `validate` command; 19 tests |
 | A13 rerun | Pass | three independent artifacts |
@@ -329,8 +329,8 @@ fixture. A clean clone reproduced an `ok` artifact.
 | A16 CI | Partial | workflow added; not executed on a remote |
 | A17 scaling diagnostic | Pass | slope ratios 1.02/0.83; fixture check |
 
-P1 is **not accepted yet**: A10 (a standalone report command) and A16 (remote
-CI execution) are incomplete.
+P1 is **not accepted yet**: A16 (remote CI execution) is the only remaining
+check; the workflow exists but has not run on a remote.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.

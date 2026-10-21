@@ -2,8 +2,12 @@ import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/x/fs" @xfs,
+  "superbigcup325/moonperf/core/artifact",
   "superbigcup325/moonperf/core/dataset",
   "superbigcup325/moonperf/core/manifest",
+  "superbigcup325/moonperf/core/report",
   "superbigcup325/moonperf/core/runner",
 }
 

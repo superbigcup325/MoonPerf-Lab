@@ -329,7 +329,7 @@ earlier would delay the first trustworthy measurement.
 | Phase | Outcome | Status |
 | --- | --- | --- |
 | **P0 · Audit and contract** | Protocol, schemas, skeleton, capability probe, consistent docs | In place (2026-10-20) |
-| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; full MoonBit loop, timeout/scaling, clean clone and CI; A1–A17 partial |
+| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; full MoonBit loop, timeout/scaling, clean clone and CI; only A16 (remote CI) open |
 | **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | After MVP |
 | **P3 · Automation** | History, CI correctness, noise-aware regression detection | After P2 |
 | **P4 · Research** | Profiling, bottleneck attribution, experiment matrices, cross-project reuse | After P2/P3 |

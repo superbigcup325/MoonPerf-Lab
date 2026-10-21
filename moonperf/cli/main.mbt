@@ -1,11 +1,12 @@
 ///|
 fn usage() -> Unit {
   println(
-    "usage: mpf <list|validate|dataset|run> [options]\n" +
+    "usage: mpf <list|validate|dataset|run|report> [options]\n" +
     "  list [root]                         list workloads under root\n" +
     "  validate [path ...]                 validate workloads or manifests\n" +
     "  dataset --manifest FILE --out FILE  generate a workload dataset\n" +
-    "  run WORKLOAD [--out DIR] [--data-dir DIR] [--repo-root DIR]",
+    "  run WORKLOAD [--out DIR] [--data-dir DIR] [--repo-root DIR]\n" +
+    "  report ARTIFACT [--out FILE] [--repo-root DIR]",
   )
 }
 
@@ -239,6 +240,48 @@ async fn run(args : Array[String]) -> Unit {
 }
 
 ///|
+async fn report(args : Array[String]) -> Unit {
+  let artifact_path = if args.length() >= 3 && !args[2].has_prefix("--") {
+    args[2]
+  } else {
+    option(args, "--artifact")
+  }
+  let default_root = if (@fs.exists("../workloads") catch { _ => false }) {
+    ".."
+  } else {
+    "."
+  }
+  let repo_root = option_or(args, "--repo-root", default_root)
+  let out = option_or(
+    args,
+    "--out",
+    if artifact_path.has_suffix(".json") {
+      artifact_path[:artifact_path.length() - 5].to_owned() + ".md"
+    } else {
+      artifact_path + ".md"
+    },
+  )
+  let text = @xfs.read_file_to_string(artifact_path) catch {
+    _ => abort("cannot read " + artifact_path)
+  }
+  let parsed = @json.parse(text) catch {
+    _ => abort("invalid JSON: " + artifact_path)
+  }
+  let artifact = @artifact.from_json(parsed)
+  let manifest_path = repo_root +
+    "/workloads/" +
+    artifact.workload_name +
+    "/workload.toml"
+  let question = @manifest.load_workload(manifest_path).summary.unwrap_or("") catch {
+    _ => ""
+  }
+  @xfs.write_string_to_file(out, @report.render(artifact, question)) catch {
+    _ => abort("cannot write " + out)
+  }
+  println("report " + out)
+}
+
+///|
 async fn main {
   let args = @env.args()
   if args.length() < 2 {
@@ -254,6 +297,8 @@ async fn main {
     dataset(args)
   } else if command == "run" {
     run(args)
+  } else if command == "report" {
+    report(args)
   } else {
     usage()
     abort("unknown command: " + command)
