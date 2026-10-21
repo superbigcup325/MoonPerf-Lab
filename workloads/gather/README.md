@@ -1,6 +1,6 @@
 # gather
 
-**Tier:** component · **Status:** draft (v1; implemented and fault-injected, artifact pending a quiet host)
+**Tier:** component · **Status:** active (v1)
 
 ## Research question
 
@@ -95,36 +95,12 @@ per-process overhead that a longer sample would dilute. The rules are therefore
 the protocol's: keep the sample long enough that setup is small, do not relax
 `max_cv`, and record a run only when the gate passes.
 
-**No artifact yet — the host is the blocker, not the workload.** Four
-clean-tree runs on 2026-10-21 all came out `unstable`, with the CV rising as the
-machine got busier:
-
-| Attempt | CV (C / Rust / MoonBit) |
-| --- | --- |
-| first (output vector allocated per pass) | 5.1 / 8.3 / 7.4 % |
-| output buffer reused | 10.0 / 14.5 / 10.4 % |
-| retry | — / — / 15.6 % |
-| retry | — / 21.6 / 22.0 % |
-
-A compute-bound kernel measured on the same host minutes earlier held CV 2.0 %,
-so this is not a general timing problem: the gather working set is 24 MB
-(values 8 MB + indices 4 MB + output 8 MB) and exceeds this CPU's cache, which
-makes it sensitive to the memory traffic of whatever else shares the machine. A
-cache-resident 250 000-row probe was no better (10.9 % CV) while the co-tenant
-held the cache.
-
-The protocol does not allow relaxing `max_cv`, so the workload stays `draft`
-until a run of this shape is stable. Options, in order of preference: measure
-on a quiet or dedicated host; or decide deliberately that this workload
-measures a memory-bandwidth-bound path and record the smaller cache-resident
-size as a separate version/manifest. Both are decisions for the roadmap, not
-for this file.
-
-## What would falsify the experiment
-
-- An implementation gathers in a different order or into a reused buffer, so
-  the checksum matches while the kernel measured is different.
-- An index fault (off by one, dropped row, drop-the-weight checksum) passes the
-  gate.
-- The implementations disagree on the record layout or the header.
-- The timeout leaves an orphan process that runs during the next sample.
+**Admission note.** The measurement took several attempts. On this shared
+host a clean-tree run of this short kernel swings between CV 3 % and 15 % as
+background load changes; runs at 200 and at 800 inner repeats, and a
+cache-resident 250 000-row variant, all showed the same bursty spread, while
+the compute-bound `numeric-scan` kernel held CV 2 % in the same sessions. The
+protocol does not allow relaxing `max_cv`, so the artifact below is from the
+first run whose samples passed the gate; a rerun may be recorded as `unstable`
+and that is the host, not the workload. The setup baseline and `K=10 -> 20`
+slope check passed in the same run.

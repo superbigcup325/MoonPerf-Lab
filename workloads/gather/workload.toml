@@ -1,7 +1,7 @@
 schema_version = 1
 name = "gather"
 version = 1
-status = "draft"
+status = "active"
 tier = "component"
 summary = "Gather a million values through an index vector into an output vector and checksum the result; the question is indirect addressing and cache locality."
 
