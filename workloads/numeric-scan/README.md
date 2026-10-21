@@ -85,8 +85,9 @@ hidden flag. That is what makes the comparison auditable.
 The manifest uses `warmup = 3`, `repeats = 20`, `inner_repeats = 200`,
 `timeout_s = 120` and `max_cv = 0.05` (version 5; v4 changed the measurement and v5 only flips the lifecycle status to active). The setup baseline is the median of three
 `K = 0` invocations. On the stable-load run used for the first artifact,
-`K = 200` gave CV 1.58 % for Rust and 1.29 % for MoonBit, and setup fractions
-of 2.8 % and 1.3 %, both within the 0.10 micro gate.
+the accepted active-workload run at `K = 200` gave CV 3.26 % for Rust and
+3.05 % for MoonBit, and setup fractions of 2.6 % and 1.5 %, both within the
+0.10 micro gate.
 
 The first accepted artifact is from a clean build and a recorded host. The
 runner also checks the `K=10 -> 20` slope; it should be about ten kernels, and

@@ -324,9 +324,9 @@ fixture. A clean clone reproduced an `ok` artifact.
 | A11 schema validation | Pass | `mpf validate --result` |
 | A12 MoonBit validator | Pass | `validate` command; 19 tests |
 | A13 rerun | Pass | three independent artifacts |
-| A14 clean clone | Pass | scratch clone run, `dirty=false`, `ok` |
+| A14 clean clone | Pass | v5 scratch clone run, `dirty=false`, `ok` |
 | A15 hygiene | Pass | relative paths only; links checked |
-| A16 CI | Pass | [run 39550582854](https://github.com/superbigcup325/MoonPerf-Lab/actions/runs/39550582854) green on `main` |
+| A16 CI | Pass | [run 39551029540](https://github.com/superbigcup325/MoonPerf-Lab/actions/runs/39551029540) green on `main` |
 | A17 scaling diagnostic | Pass | slope ratios 0.96/0.94; fixture check |
 
 P1 is **accepted**: all A1–A17 checks are green, including the remote CI run.
