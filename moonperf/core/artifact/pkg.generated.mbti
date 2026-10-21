@@ -98,6 +98,7 @@ pub(all) struct MeasurementRecord {
 pub(all) struct SetupRecord {
   wall_ns : Int64
   fraction : Double
+  runs : Int32
 }
 
 pub(all) struct SourceRecord {

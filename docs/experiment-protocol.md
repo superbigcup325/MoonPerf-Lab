@@ -8,8 +8,8 @@ them.
 > **Implementation status (2026-10-20).** This is the normative contract, not a
 > description of the current code. The Python bootstrap implements most of it,
 > but no admissible artifact has been produced yet and the MoonBit core is P1.
-> The planned P1 additions — a `--repeat 0` setup baseline, reference-first
-> verification and language-neutral harness metadata — are specified in
+> The planned P1 additions — a `--repeat 0` setup baseline (median of three
+> runs), reference-first verification and language-neutral harness metadata — are specified in
 > [`mvp.md`](mvp.md) and [`architecture.md`](architecture.md); they will be
 > folded into this protocol when implemented. Until then, version 1 governs.
 

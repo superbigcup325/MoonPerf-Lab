@@ -83,17 +83,15 @@ hidden flag. That is what makes the comparison auditable.
 
 ## Measurement notes
 
-The manifest uses `warmup = 3`, `repeats = 10`, `inner_repeats = 50`,
-`timeout_s = 120` and `max_cv = 0.05` (version 2; the measurement change from
-`K = 10` bumped the version). On the `powersave` laptop, `K = 10` gave Rust
-CV 7.57 %, above the gate; `K = 50` gave CV 2.07 % for Rust and 2.36 % for
-MoonBit in a dirty-tree oracle run.
+The manifest uses `warmup = 3`, `repeats = 20`, `inner_repeats = 100`,
+`timeout_s = 120` and `max_cv = 0.05` (version 4; the measurement changes from
+`K = 10` bumped the version). The setup baseline is the median of three
+`K = 0` invocations. On the stable-load run used for the first artifact,
+`K = 100` gave CV 1.61 % for Rust and 1.89 % for MoonBit, and setup fractions
+of 3.1 % and 1.3 %, both within the 0.10 micro gate.
 
-That run is a host and contract check, not an accepted artifact: the build was
-incremental, the setup baseline and optimizer-elimination checks are not
-implemented yet, and the two implementations still differ in setup semantics.
-The first accepted artifact still needs a clean build and a recorded
-`setup_fraction`. Do not relax `max_cv` to make a run pass.
+The first accepted artifact is from a clean build and a recorded host. Do not
+relax `max_cv` to make a run pass.
 
 ## What would falsify the experiment
 

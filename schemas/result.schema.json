@@ -470,6 +470,10 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "runs": {
+              "type": "integer",
+              "minimum": 1
             }
           }
         }

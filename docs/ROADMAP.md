@@ -297,7 +297,8 @@ stable host.
 **P1.3-A (done 2026-10-20):** both implementations load an `f64` array before
 the kernel; MoonBit checks `length % 8 == 0`; both use an optimizer barrier
 (`Bench::keep` / `black_box`); the runner performs clean builds via `build_dir`
-and records toolchain and build-log SHA-256 in the artifact.
+and records toolchain and build-log SHA-256 in the artifact. The setup baseline
+is the median of three runs and is recorded with its run count.
 
 **P1.3-B (next):** timeout-as-invalid-artifact, the `K = 1` vs `K = 10`
 scaling diagnostic, a stable host, the full A1–A17 acceptance suite and a
@@ -350,7 +351,7 @@ old artifacts readable.
 - `schemas/result.schema.json`: `experiment.harness` requires `version`,
   requires either `name` (new) or the legacy `python`, and accepts optional
   `runtime`; each implementation gains an optional `setup` object
-  (`inner_repeats = 0`, `wall_ns`, `fraction`).
+  (`inner_repeats = 0`, `wall_ns`, `fraction`, `runs`).
 - `schemas/adapter.schema.json`: optional `build_dir` for the clean-build rule.
 - `experiment-protocol.md` §5: `run.sh --repeat 0` is the setup baseline.
 - `experiment-protocol.md` §6: the reference is verified first.

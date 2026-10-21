@@ -258,8 +258,9 @@ The per-iteration sample is `wall_ns / K`. It includes process startup, dataset
 loading and `K` kernel passes. Those costs are identical in contract for every
 implementation in the same experiment; they are not hidden.
 
-To keep the comparison about the kernel, the harness also runs a setup baseline
-with `K = 0`, records `setup_ns`, and reports:
+To keep the comparison about the kernel, the harness also runs three setup
+baselines with `K = 0`, records the median `setup_ns` and the run count, and
+reports:
 
 ```text
 setup_fraction = setup_ns / wall_ns(K)

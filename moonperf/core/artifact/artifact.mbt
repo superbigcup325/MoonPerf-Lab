@@ -39,6 +39,7 @@ pub(all) struct MeasurementRecord {
 pub(all) struct SetupRecord {
   wall_ns : Int64
   fraction : Double
+  runs : Int32
 }
 
 ///|
@@ -194,6 +195,7 @@ fn implementation_json(implementation : ImplementationRecord) -> Json {
               ("inner_repeats", json_int(0)),
               ("wall_ns", json_int64(setup.wall_ns)),
               ("fraction", Json::number(setup.fraction)),
+              ("runs", json_int(setup.runs)),
             ]),
           ),
         ),

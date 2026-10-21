@@ -58,7 +58,7 @@ test "artifact serializes the required shape" {
         },
         samples_ns: [10L, 11L],
         summary: Some(summary),
-        setup: Some(({ wall_ns: 5L, fraction: 0.05, } : SetupRecord)),
+        setup: Some(({ wall_ns: 5L, fraction: 0.05, runs: 1, } : SetupRecord)),
       },
     ],
     comparisons: ([] : Array[ComparisonRecord]),

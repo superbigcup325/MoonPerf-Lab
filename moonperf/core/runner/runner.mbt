@@ -449,23 +449,32 @@ async fn run_setup_baseline(
   output_dir : String,
   workload : @manifest.Workload,
 ) -> Unit {
-  let output_path = join(output_dir, state.implementation.id + "-setup.json")
-  let result = adapter_run(
-    state.implementation,
-    dataset_path,
-    params_path,
-    output_path,
-    0,
-    workload.measurement.timeout_s,
-  ) catch {
-    error => raise @host.error("setup baseline failed: " + error.to_string())
+  let walls : Array[Int64] = []
+  for run in 0..<3 {
+    let output_path = join(
+      output_dir,
+      state.implementation.id + "-setup-" + run.to_string() + ".json",
+    )
+    let result = adapter_run(
+      state.implementation,
+      dataset_path,
+      params_path,
+      output_path,
+      0,
+      workload.measurement.timeout_s,
+    ) catch {
+      error => raise @host.error("setup baseline failed: " + error.to_string())
+    }
+    if result.timed_out || result.exit_code != 0 {
+      raise @host.error("setup baseline failed for " + state.implementation.id)
+    }
+    walls.push((result.wall_us * 1000.0).to_int64())
   }
-  if result.timed_out || result.exit_code != 0 {
-    return
-  }
+  walls.sort()
   state.setup = Some({
-    wall_ns: (result.wall_us * 1000.0).to_int64(),
+    wall_ns: walls[walls.length() / 2],
     fraction: 0.0,
+    runs: walls.length(),
   })
 }
 
@@ -710,6 +719,7 @@ pub async fn run_workload(
                     workload.measurement.inner_repeats.to_double() *
                     summary.median_ns
                   ),
+                  runs: setup.runs,
                 } : @artifact.SetupRecord),
             )
           None => Some(setup)

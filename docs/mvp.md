@@ -157,9 +157,9 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
 - A timeout is a failed run: kill the process group, record the failure, carry
   no sample for that invocation, and set the verdict `invalid`. The artifact is
   still written; a silent abort is not acceptable.
-- The setup baseline (`K = 0`) is run once per implementation before the
-  measured rounds; record `setup_ns` and `setup_fraction`. It is diagnostic,
-  not subtracted.
+- The setup baseline (`K = 0`) is run three times per implementation before the
+  measured rounds; record the median `setup_ns`, the run count and
+  `setup_fraction`. It is diagnostic, not subtracted.
 - `K` is chosen so that `setup_fraction <= 0.10` for a micro claim. Increase
   `K` until that holds; record the value in the manifest. Do not change
   `max_cv` to make a noisy run pass.
@@ -214,7 +214,7 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
 | Reference | Rust |
 | Verification | tolerance `rtol=1e-9`, `atol=0`; integers exact |
 | Implementations | `moonbit`, `rust`; `c` is P2 |
-| Measurement | warmup 3, repeats 10, `K` tuned, timeout 120 s, `max_cv` 0.05 |
+| Measurement | warmup 3, repeats 20, `K = 100`, timeout 120 s, `max_cv` 0.05 |
 
 Fairness rules for this workload:
 

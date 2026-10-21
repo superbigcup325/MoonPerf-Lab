@@ -1,6 +1,6 @@
 schema_version = 1
 name = "numeric-scan"
-version = 2
+version = 4
 status = "draft"
 tier = "micro"
 summary = "Stream a dense f64 array and accumulate sum, sum of squares, min, max and a threshold count."
@@ -26,7 +26,7 @@ fields = ["n", "sum", "sumsq", "min", "max", "count_above"]
 
 [measurement]
 warmup = 3
-repeats = 10
+repeats = 20
 timeout_s = 120
-inner_repeats = 50
+inner_repeats = 200
 max_cv = 0.05
