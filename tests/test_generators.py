@@ -31,6 +31,13 @@ NULLABLE_SMALL_HEX = (
     "00000000000000000002000000000000000000000000000000010000000000000000000000000000004701"
 )
 NULLABLE_GOLDEN = "d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93"
+COLUMNAR_SMALL_HEX = (
+    "08000000410000000000000013000000000000005a00000000000000"
+    "23000000000000003d0000000000000030000000000000002d00000000"
+    "0000002100000000000000010000000200000004000000050000000100"
+    "0000020000000200000003000000"
+)
+COLUMNAR_GOLDEN = "e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79"
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -203,3 +210,54 @@ class NullableColumnTest(unittest.TestCase):
             reference_generators.nullable_column_bytes(4, 1, 10, 0, 10)
         with self.assertRaises(ValueError):
             reference_generators.nullable_column_bytes(4, 1, 0, 10, 101)
+
+def decode_columnar(payload: bytes) -> tuple[list[int], list[int]]:
+    """Split a columnar-gather payload into its value column and index vector."""
+
+    (count,) = struct.unpack_from("<I", payload, 0)
+    values = list(struct.unpack_from(f"<{count}q", payload, 4))
+    indices = list(struct.unpack_from(f"<{count}I", payload, 4 + count * 8))
+    return values, indices
+
+
+class ColumnarGatherTest(unittest.TestCase):
+    def test_small_layout_is_stable(self) -> None:
+        payload = reference_generators.columnar_gather_bytes(
+            **reference_generators.SMALL_COLUMNAR
+        )
+        self.assertEqual(payload.hex(), COLUMNAR_SMALL_HEX)
+
+    def test_golden_hash_matches_the_core(self) -> None:
+        payload = reference_generators.columnar_gather_bytes(
+            **reference_generators.GOLDEN_COLUMNAR
+        )
+        self.assertEqual(len(payload), 12_000_004)
+        self.assertEqual(sha256_hex(payload), COLUMNAR_GOLDEN)
+
+    def test_indices_are_in_range_and_local(self) -> None:
+        for locality in (1, 8):
+            payload = reference_generators.columnar_gather_bytes(
+                4_000, 7, 0, 1_000, locality
+            )
+            values, indices = decode_columnar(payload)
+            self.assertEqual(len(values), 4_000)
+            self.assertEqual(len(indices), 4_000)
+            self.assertTrue(all(0 <= index < 4_000 for index in indices))
+            # A run of `locality` rows walks forward one index at a time.
+            starts = range(0, 4_000, locality)
+            for start in starts:
+                run = indices[start : start + locality]
+                self.assertEqual(run, list(range(run[0], run[0] + len(run))))
+
+    def test_locality_one_is_not_sequential(self) -> None:
+        payload = reference_generators.columnar_gather_bytes(
+            1_000, 11, 0, 1_000, 1
+        )
+        _, indices = decode_columnar(payload)
+        self.assertNotEqual(indices, sorted(indices))
+
+    def test_invalid_parameters_are_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            reference_generators.columnar_gather_bytes(4, 1, 10, 0, 1)
+        with self.assertRaises(ValueError):
+            reference_generators.columnar_gather_bytes(4, 1, 0, 10, 0)

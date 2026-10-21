@@ -141,3 +141,46 @@ SMALL_NULLABLE = dict(count=10, seed=1, value_min=0, value_max=9, null_percent=5
 GOLDEN_NULLABLE = dict(
     count=100_000, seed=20261023, value_min=0, value_max=1_000_000, null_percent=10
 )
+
+
+def columnar_gather_bytes(
+    count: int, seed: int, value_min: int, value_max: int, locality: int
+) -> bytes:
+    """Dense value column plus an index vector gathered in runs of `locality`."""
+
+    if count < 1:
+        raise ValueError("count must be positive")
+    if seed < 0:
+        raise ValueError("seed must be non-negative")
+    if value_min < 0 or value_max < value_min:
+        raise ValueError("value range is invalid")
+    if not 1 <= locality <= 4096:
+        raise ValueError("locality must be between 1 and 4096")
+    span = value_max - value_min + 1
+    out = bytearray(4 + count * 8 + count * 4)
+    struct.pack_into("<I", out, 0, count)
+    values_start = 4
+    state = seed & MASK64
+    for row in range(count):
+        state = (state + GOLDEN) & MASK64
+        struct.pack_into("<q", out, values_start + row * 8, value_min + mix64(state) % span)
+    indices_start = values_start + count * 8
+    run_start = 0
+    while run_start < count:
+        run_len = min(locality, count - run_start)
+        state = (state + GOLDEN) & MASK64
+        base = mix64(state) % (count - run_len + 1)
+        for offset in range(run_len):
+            struct.pack_into(
+                "<I", out, indices_start + (run_start + offset) * 4, base + offset
+            )
+        run_start += run_len
+    return bytes(out)
+
+
+SMALL_COLUMNAR = dict(
+    count=8, seed=1, value_min=0, value_max=99, locality=2
+)
+GOLDEN_COLUMNAR = dict(
+    count=1_000_000, seed=20261025, value_min=0, value_max=1_000_000, locality=16
+)
