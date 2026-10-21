@@ -55,3 +55,54 @@ SMALL_RECORDS = dict(count=2, seed=1, key_bits=8, payload_min=0, payload_max=100
 GOLDEN_RECORDS = dict(
     count=1_000_000, seed=20261021, key_bits=20, payload_min=0, payload_max=1_000_000
 )
+
+
+def strings_bytes(
+    count: int,
+    seed: int,
+    distinct: int,
+    value_len_min: int,
+    value_len_max: int,
+    skew: int,
+) -> bytes:
+    """Dictionary-encoded string column: dictionary, then row indices."""
+
+    if count < 1:
+        raise ValueError("count must be positive")
+    if seed < 0:
+        raise ValueError("seed must be non-negative")
+    if not 1 <= distinct <= 1_000_000:
+        raise ValueError("distinct must be between 1 and 1000000")
+    if not 1 <= value_len_min <= value_len_max <= 255:
+        raise ValueError("value length range is invalid")
+    if not 1 <= skew <= 8:
+        raise ValueError("skew must be between 1 and 8")
+    out = bytearray(struct.pack("<I", distinct))
+    span = value_len_max - value_len_min + 1
+    state = seed & MASK64
+    for _ in range(distinct):
+        state = (state + GOLDEN) & MASK64
+        length = value_len_min + mix64(state) % span
+        out += struct.pack("<I", length)
+        for _ in range(length):
+            state = (state + GOLDEN) & MASK64
+            out.append(ord("a") + mix64(state) % 26)
+    for _ in range(count):
+        state = (state + GOLDEN) & MASK64
+        z = mix64(state)
+        for _ in range(1, skew):
+            state = (state + GOLDEN) & MASK64
+            candidate = mix64(state)
+            if candidate < z:
+                z = candidate
+        out += struct.pack("<I", ((z >> 32) * distinct) >> 32)
+    return bytes(out)
+
+
+SMALL_STRINGS = dict(
+    count=6, seed=1, distinct=4, value_len_min=3, value_len_max=5, skew=2
+)
+GOLDEN_STRINGS = dict(
+    count=100_000, seed=20261022, distinct=10_000,
+    value_len_min=4, value_len_max=24, skew=3,
+)

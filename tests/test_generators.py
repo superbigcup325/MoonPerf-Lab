@@ -10,6 +10,7 @@ fails both suites.
 from __future__ import annotations
 
 import hashlib
+import struct
 import unittest
 
 import reference_generators
@@ -20,6 +21,11 @@ RECORDS_SMALL_HEX = (
     "91000000000000002300000000000000f8000000000000004b00000000000000"
 )
 RECORDS_GOLDEN = "a0bf64a4d028cc768a1ce138b7b4bf7cd9bd6a57244bd51c5996575682eba13c"
+STRINGS_SMALL_HEX = (
+    "0400000005000000746f646663030000006c797303000000657979040000006c706273"
+    "000000000000000000000000000000000000000002000000"
+)
+STRINGS_GOLDEN = "76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681"
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -84,3 +90,63 @@ class StructuredRecordsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def decode_strings(payload: bytes) -> tuple[list[str], list[int]]:
+    """Split a strings payload into its dictionary and its index column."""
+
+    (distinct,) = struct.unpack_from("<I", payload, 0)
+    offset = 4
+    dictionary = []
+    for _ in range(distinct):
+        (length,) = struct.unpack_from("<I", payload, offset)
+        offset += 4
+        dictionary.append(payload[offset : offset + length].decode("ascii"))
+        offset += length
+    indices = list(struct.unpack_from(f"<{len(payload) - offset >> 2}I", payload, offset))
+    return dictionary, indices
+
+
+class StringsTest(unittest.TestCase):
+    def test_small_layout_is_stable(self) -> None:
+        payload = reference_generators.strings_bytes(
+            **reference_generators.SMALL_STRINGS
+        )
+        self.assertEqual(payload.hex(), STRINGS_SMALL_HEX)
+
+    def test_golden_hash_matches_the_core(self) -> None:
+        payload = reference_generators.strings_bytes(
+            **reference_generators.GOLDEN_STRINGS
+        )
+        self.assertEqual(len(payload), 579_316)
+        self.assertEqual(sha256_hex(payload), STRINGS_GOLDEN)
+
+    def test_dictionary_and_indices_are_well_formed(self) -> None:
+        payload = reference_generators.strings_bytes(
+            count=200, seed=3, distinct=50, value_len_min=2, value_len_max=6, skew=2
+        )
+        dictionary, indices = decode_strings(payload)
+        self.assertEqual(len(dictionary), 50)
+        self.assertEqual(len(indices), 200)
+        self.assertTrue(all(2 <= len(value) <= 6 for value in dictionary))
+        self.assertTrue(all(value.islower() and value.isascii() for value in dictionary))
+        self.assertTrue(all(0 <= index < 50 for index in indices))
+
+    def test_skew_concentrates_the_index_column(self) -> None:
+        plain = decode_strings(
+            reference_generators.strings_bytes(5_000, 9, 100, 4, 4, 1)
+        )[1]
+        skewed = decode_strings(
+            reference_generators.strings_bytes(5_000, 9, 100, 4, 4, 4)
+        )[1]
+        hot_plain = sum(1 for index in plain if index < 10) / len(plain)
+        hot_skewed = sum(1 for index in skewed if index < 10) / len(skewed)
+        self.assertGreater(hot_skewed, hot_plain * 2)
+
+    def test_invalid_parameters_are_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            reference_generators.strings_bytes(4, 1, 0, 4, 8, 1)
+        with self.assertRaises(ValueError):
+            reference_generators.strings_bytes(4, 1, 10, 8, 4, 1)
+        with self.assertRaises(ValueError):
+            reference_generators.strings_bytes(4, 1, 10, 4, 8, 0)
