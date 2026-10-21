@@ -455,7 +455,7 @@ own commit slice.
   (`cc -std=c17 -O3 -march=native`) is part of the implementation id.
 - It was added by creating a directory, not by editing the core — the first
   evidence for the "new implementation without touching the framework" rule.
-- `scripts/crosscheck-numeric-scan.py` runs both adapters on the harness
+- `scripts/crosscheck-workload.py` runs both adapters on the harness
   dataset and applies the workload's own tolerance rule. The gate was shown to
   fail: a C kernel that starts at element 1 moves `sum` by `0.33` against a
   `7.5e-7` limit. The new `c-reference` CI job builds both adapters and runs

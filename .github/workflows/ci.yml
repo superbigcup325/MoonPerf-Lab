@@ -104,7 +104,49 @@ jobs:
         working-directory: workloads/numeric-scan/implementations/rust
         run: ./build.sh
       - name: Cross-check the C output against the Rust reference
-        run: python scripts/crosscheck-numeric-scan.py --repeat 3
+        run: python scripts/crosscheck-workload.py numeric-scan --subject c --repeat 3
+
+  hash-join:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the harness oracle
+        run: python -m pip install -e .
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Update the registry
+        working-directory: moonperf
+        run: moon update
+      - name: Build the MoonBit implementation
+        working-directory: workloads/hash-join/implementations/moonbit
+        run: ./build.sh
+      - name: Build the Rust and C implementations
+        working-directory: workloads/hash-join/implementations
+        run: |
+          ./rust/build.sh
+          ./c/build.sh
+      - name: Generate the dataset with the core
+        working-directory: moonperf
+        run: |
+          mkdir -p ../results/tmp
+          moon run cli --target native -- dataset \
+            --manifest ../workloads/hash-join/workload.toml \
+            --out ../results/tmp/hash-join-dataset.bin \
+            | tee ../results/tmp/hash-join-identity.txt
+          grep -q a413e1deb6d87790988d4331fcc264d4d12047c1b0f789134796812ccb0aa23d \
+            ../results/tmp/hash-join-identity.txt
+      - name: Cross-check MoonBit and C against the Rust reference
+        run: |
+          python scripts/crosscheck-workload.py hash-join \
+            --dataset results/tmp/hash-join-dataset.bin \
+            --sha256 a413e1deb6d87790988d4331fcc264d4d12047c1b0f789134796812ccb0aa23d \
+            --subject moonbit --subject c --repeat 1
 
   runner-fixture:
     runs-on: ubuntu-latest

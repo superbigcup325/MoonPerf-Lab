@@ -45,7 +45,7 @@ The tolerance is not a way to make results pass: a skipped element or a
 wrongly accumulated term moves `sum` by far more than `1e-9` relative at this
 input size. The gate is shown to fail, not assumed to: the `demo-scan` runner
 fixture injects a wrong output, a timeout and a build failure, and
-`scripts/crosscheck-numeric-scan.py` can be pointed at a patched kernel. A C
+`scripts/crosscheck-workload.py` can be pointed at a patched kernel. A C
 build that starts its loop at element 1 instead of 0 moves `sum` by `0.33`
 against a tolerance of `7.5e-7`, so the adapter is excluded before any timing
 and never appears in the timing table.
