@@ -214,7 +214,7 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
 | Reference | Rust |
 | Verification | tolerance `rtol=1e-9`, `atol=0`; integers exact |
 | Implementations | `moonbit`, `rust`; `c` is P2 |
-| Measurement | warmup 3, repeats 20, `K = 100`, timeout 120 s, `max_cv` 0.05 |
+| Measurement | warmup 3, repeats 20, `K = 200`, timeout 120 s, `max_cv` 0.05 |
 
 Fairness rules for this workload:
 

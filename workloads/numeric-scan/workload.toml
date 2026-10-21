@@ -1,7 +1,7 @@
 schema_version = 1
 name = "numeric-scan"
-version = 4
-status = "draft"
+version = 5
+status = "active"
 tier = "micro"
 summary = "Stream a dense f64 array and accumulate sum, sum of squares, min, max and a threshold count."
 

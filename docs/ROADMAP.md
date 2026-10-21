@@ -301,7 +301,7 @@ and records toolchain and build-log SHA-256 in the artifact. The setup baseline
 is the median of three runs and is recorded with its run count.
 
 **P1.3-B (done 2026-10-21):** the first `ok` artifact is committed from a
-stable-load run (`K=100`, repeats=20, setup median of three). Timeout writes an
+stable-load run (`K=200`, repeats=20, setup median of three). Timeout writes an
 `invalid` artifact with `measurement_ok=false` and no samples; the `K = 10` vs
 `K = 20` scaling diagnostic is recorded in the verdict notes, and a slope ratio
 below 0.5 fails the verdict. CI now runs Python, MoonBit, Rust and the timeout
