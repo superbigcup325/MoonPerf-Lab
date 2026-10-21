@@ -1,0 +1,4 @@
+schema_version = 1
+language = "Rust"
+summary = "Reference: the fixed GROUP BY hand-written over the raw CSV bytes, dense 4096-slot category tables, no SQL parser; black_box across repeats; rustc -C opt-level=3 -C target-cpu=native"
+build_dir = "target"

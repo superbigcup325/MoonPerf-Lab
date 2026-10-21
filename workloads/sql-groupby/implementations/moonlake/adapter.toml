@@ -1,0 +1,4 @@
+schema_version = 1
+language = "MoonBit (moonlake)"
+summary = "The same query executed by moonlake 0.3.1: CSV scan source registered in a catalog, then parse, bind and run the SQL per pass. This is the engine path, not a hand-written loop."
+build_dir = "_build"

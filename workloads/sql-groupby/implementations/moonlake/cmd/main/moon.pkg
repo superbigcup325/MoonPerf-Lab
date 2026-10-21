@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+  "moonbitlang/x/fs",
+  "superbigcup325/moonlake",
+  "superbigcup325/moonlake/catalog",
+  "superbigcup325/moonlake/sources/csv",
+  "superbigcup325/moonlake/types",
+}
+
+pkgtype(kind: "executable")

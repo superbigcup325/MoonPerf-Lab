@@ -1,0 +1,29 @@
+schema_version = 1
+name = "sql-groupby"
+version = 1
+status = "active"
+tier = "end-to-end"
+summary = "Parse a CSV table and answer one fixed GROUP BY: the Moonlake engine path against hand-written MoonBit, Rust and C pipelines over the same bytes."
+
+[dataset]
+generator = "csv-records"
+count = 2_000_000
+seed = 20261026
+
+[dataset.params]
+categories = 16
+amount_max = 1_000_000
+
+[params]
+
+[verify]
+mode = "exact"
+fields = ["groups", "rows", "checksum"]
+reference = "rust"
+
+[measurement]
+warmup = 3
+repeats = 20
+timeout_s = 120
+inner_repeats = 10
+max_cv = 0.05

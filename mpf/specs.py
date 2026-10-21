@@ -43,6 +43,7 @@ KNOWN_GENERATORS = (
     "strings",
     "nullable-columns",
     "columnar-gather",
+    "csv-records",
 )
 
 
