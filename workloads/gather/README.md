@@ -95,11 +95,27 @@ The manifest uses `warmup = 3`, `repeats = 20`, `timeout_s = 120`,
 host, so a sample is about 0.4 s of kernel and the 48 MB dataset load stays
 under the 0.10 component setup gate.
 
+The artifact of record is
+`results/gather/20261021T140344Z-b6d5f9215963.json`: clean tree, `verdict=ok`,
+dataset SHA-256 `34c20a7b73739ef4941a20ca1a56153e54b93e82445c267c3e4d96607956cbdc`.
+
+| Implementation | Median ns/iter | CV | Setup fraction |
+| --- | ---: | ---: | ---: |
+| `c` | 10 109 469.5 | 2.05 % | 5.25 % |
+| `rust` | 8 314 058.5 | 3.24 % | 5.68 % |
+| `moonbit` | 16 577 759 | 2.49 % | 3.69 % |
+
+`K=10 -> 20` slope ratios are 0.89 / 0.99 / 1.01. The gather is the first
+workload where MoonBit is about 2× the Rust median on a loop with no arithmetic
+to blame: 4 M dependent loads per pass, so the difference is in the generated
+load path or the layout of the two arrays, not in the operation mix. That is an
+attribution question (P4), not a conclusion this artifact can carry.
+
 **Admission note.** The 1 000 000-row version of this workload could not be
 admitted: clean-tree runs swung between CV 3 % and 15 % as background load
 changed, at 200 and at 800 inner repeats, and a cache-resident 250 000-row
 variant showed the same bursty spread, while the compute-bound `numeric-scan`
 kernel held CV 2 % in the same sessions. The protocol does not allow relaxing
-`max_cv`, so the size was changed instead — the kernel now dominates the sample
-and the run is stable. A rerun on a busy host may still be recorded as
-`unstable`; that is the host, not the workload.
+`max_cv`, so the size was changed instead — at 4 M rows the kernel is about
+5 ms per pass and dominates the sample. A rerun on a busy host may still be
+recorded as `unstable`; that is the host, not the workload.
