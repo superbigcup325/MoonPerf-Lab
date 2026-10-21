@@ -44,9 +44,11 @@ The full contract is [`docs/experiment-protocol.md`](../docs/experiment-protocol
 | --- | --- | --- | --- |
 | [numeric-scan](numeric-scan/) | micro | active | MoonBit, Rust, C17 |
 | [hash-join](hash-join/) | component | active | MoonBit, Rust, C17 |
+| [gather](gather/) | component | draft | MoonBit, Rust, C17 (implemented, artifact pending a quiet host) |
 
-Both workloads are active with a committed `ok` artifact and recorded
-fault-injection evidence. `numeric-scan` asks what a dense floating-point pass
+`numeric-scan` and `hash-join` are active with a committed `ok` artifact and
+recorded fault-injection evidence; `gather` is implemented and fault-injected
+but has no admissible artifact yet, so it is not active. `numeric-scan` asks what a dense floating-point pass
 costs; `hash-join` asks what a chained table plus a data-dependent probe costs,
 which is the first question the micro tier cannot answer. The Python `mpf run`
 draft is not evidence; see the phase status in

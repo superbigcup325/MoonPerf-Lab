@@ -1,6 +1,6 @@
 # gather
 
-**Tier:** component · **Status:** active (v1)
+**Tier:** component · **Status:** draft (v1; implemented and fault-injected, artifact pending a quiet host)
 
 ## Research question
 
@@ -89,8 +89,30 @@ recorded host, so a sample is about 0.2 s and the dataset load (12 MB plus the
 column materialization) stays small relative to it. This is a `component`
 workload: the setup gate is `setup_fraction <= 0.10`.
 
-The committed artifact `results/gather/` records the measured medians, CVs and
-setup fractions for the three implementations.
+**No artifact yet — the host is the blocker, not the workload.** Four
+clean-tree runs on 2026-10-21 all came out `unstable`, with the CV rising as the
+machine got busier:
+
+| Attempt | CV (C / Rust / MoonBit) |
+| --- | --- |
+| first (output vector allocated per pass) | 5.1 / 8.3 / 7.4 % |
+| output buffer reused | 10.0 / 14.5 / 10.4 % |
+| retry | — / — / 15.6 % |
+| retry | — / 21.6 / 22.0 % |
+
+A compute-bound kernel measured on the same host minutes earlier held CV 2.0 %,
+so this is not a general timing problem: the gather working set is 24 MB
+(values 8 MB + indices 4 MB + output 8 MB) and exceeds this CPU's cache, which
+makes it sensitive to the memory traffic of whatever else shares the machine. A
+cache-resident 250 000-row probe was no better (10.9 % CV) while the co-tenant
+held the cache.
+
+The protocol does not allow relaxing `max_cv`, so the workload stays `draft`
+until a run of this shape is stable. Options, in order of preference: measure
+on a quiet or dedicated host; or decide deliberately that this workload
+measures a memory-bandwidth-bound path and record the smaller cache-resident
+size as a separate version/manifest. Both are decisions for the roadmap, not
+for this file.
 
 ## What would falsify the experiment
 

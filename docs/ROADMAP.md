@@ -32,7 +32,7 @@ gaps, risks, estimates and the first task.
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0–P2.2 accepted, P2.3 next | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0–P2.2 accepted, P2.3 implemented but blocked on host noise | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -57,6 +57,7 @@ dependency that has not been proven on this toolchain.
 | Rust reference implementation | Implemented | `workloads/numeric-scan/implementations/rust/` | None; the correctness reference |
 | C reference for numeric-scan | Implemented | `workloads/numeric-scan/implementations/c/`; `c-reference` CI job; cross-check script | None |
 | Hash-join workload | Implemented | `workloads/hash-join/` v1 active; three implementations; `results/hash-join/20261021T114656Z-b0ff09ba5b87.json`; fault evidence in the README | None |
+| Gather workload | Implemented, not accepted | `workloads/gather/` v1 draft; three implementations; fault evidence in the README | No admissible artifact: four `unstable` runs on a noisy host |
 | MoonBit framework core | Implemented | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; three clean-build artifacts validate | Generator interface and the P2 workloads are the next core work |
 | Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test when P2.1 adds generators |
 | Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; wired into the runner; orphan and timeout fixtures pass | None |
@@ -435,7 +436,7 @@ familiarity with MoonBit. Part-time or first-time MoonBit work should plan
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** in progress (2026-10-21). P2.0–P2.2 are accepted; P2.3 is next.
+**Status:** in progress (2026-10-21). P2.0–P2.2 are accepted; P2.3 is implemented and waiting for a stable measurement.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
@@ -542,13 +543,28 @@ interface, the authoring guide and the template — all in place.
 
 ### P2.3 · Columnar gather (component)
 
-**Status:** not started.
+**Status:** implemented (2026-10-21); artifact blocked on host noise.
 
-- Dataset: a columnar layout plus an index vector (indirect addressing).
-- Kernel: gather into the output vector; the question is cache locality and
-  bounds/validation cost, not arithmetic.
-- Implementations: MoonBit, Rust, and C where the loop shape is the question.
-- Fault injection: an off-by-one index or a skipped entry must fail the gate.
+- New generator `columnar-gather`: a dense `i64` value column plus a `u32`
+  index vector, drawn in runs of `locality` rows so one parameter moves the
+  gather between random and prefetch-friendly. Golden hash and two-sided parity
+  in place; the oracle learned the id without gaining the generator.
+- `workloads/gather/` v1: Rust, MoonBit and C all parse the header, materialize
+  8-byte values and 4-byte indices before the timed loop, gather into one
+  output vector that is allocated once and reused, and checksum with a position
+  weight. Fault injection recorded: an off-by-one index and a dropped position
+  weight both change the checksum.
+- **The artifact is missing because the host is noisy, not because the code is
+  wrong.** Four clean-tree runs came out `unstable`, with CV rising from 5–8 %
+  to 22 % as the co-tenant load grew, while a compute-bound kernel measured on
+  the same host minutes earlier held CV 2.0 %. The gather working set is 24 MB
+  and exceeds this CPU's cache, so it competes for memory bandwidth; a
+  cache-resident 250 000-row probe was no better (10.9 %).
+- Consequence: the workload is `draft`, not `active`. Relaxing `max_cv` is not
+  an option; the next moves are a quiet/dedicated host, a deliberate decision
+  to make the workload cache-resident as a new version, or measuring child CPU
+  time instead of wall time (a harness change, which is P3 scope and would need
+  a protocol decision).
 
 ### P2.4 · Parquet decode or end-to-end SQL through Moonlake
 
@@ -733,7 +749,7 @@ least one external consumer.
 | MoonBit async is experimental | `moonbitlang/async` README warns API churn; 0.22.5 | Medium / high | Pin version; isolate host calls; upgrade test | Build/test on the pinned version; no API spread beyond `core/host` | P1 |
 | MoonBit has no process-group API | Probe: async timeout left two `sleep` processes | Certain / high | `setsid -w` + `kill -KILL -<pid>`; fallback native shim | Orphan test with a grandchild | P1 |
 | TOML/SHA/JSON Schema dependencies are immature | Community packages; not all vetted | Medium / medium | Pin; license check; golden tests; fallback in-house | Parse the real manifests; SHA golden; schema cross-check | P1 |
-| Measurement host is noisy | CV 7.57 % at `K=10` on `powersave` | High / high | Controlled host profile; tune `K`; CV gate | Rerun; `setup_fraction`; 20-run noise study | P1 |
+| Memory-heavy kernels on a shared host | `gather` CV 5–22 % across four runs while a compute kernel held 2.0 %; working set 24 MB | High / medium | Dedicated host, or a deliberately cache-resident workload version | Rerun on a quiet host; compare CV of memory and compute kernels | P2/P3 |
 | Porting effort is underestimated | ~1k lines of Python logic + new host primitive + tests | Medium / high | Slice the port; Python oracle; contract tests | Each slice passes a golden/parity test | P1 |
 | Semantic drift across languages | Rust `Vec<f64>` vs MoonBit byte scan | High / medium | Same setup representation; shared fixtures; review | Fault injection + byte-identical dataset + output types | P1 |
 | Optimizer eliminates the repeated kernel | Unverified `for 0..K` loop with pure `scan` | High / medium | Compiler barrier (`Bench::keep`, `black_box`, volatile sink) | `K=10` vs `K=20` slope test; inspect generated code | P1 |
@@ -808,17 +824,17 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: P2.3, the columnar gather.** A columnar layout plus an index vector, a
-gather kernel, and the same three-implementation shape as the hash join:
-manifest, Rust reference, MoonBit and C, fault injection, committed artifact.
-The `structured-records` and `strings` generators already provide the input
-shapes; the question is cache locality and indirect addressing.
+**Next: an admissible artifact for `gather`, or a documented decision not to
+wait for one.** The code, the generators and the fault injection are done; what
+is missing is a stable measurement. Either re-run on a quiet host, or decide
+that the workload should be cache-resident and record that as a new version
+with its own dataset identity. Do not relax `max_cv`.
 
 The earlier tasks are closed: P1.0-A made the oracle produce a green artifact
 (2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, P2.0
 added the C reference (2026-10-21), P2.1 landed the generator registry with four
 generators plus the authoring guide, and P2.2 added the hash join with three
-implementations and a recorded artifact; see the P2 section for the evidence.
+implementations and a recorded artifact.
 
 ## Plan revision log
 
@@ -833,6 +849,11 @@ implementations and a recorded artifact; see the P2 section for the evidence.
   hash and byte parity against the Python generator; added the typed manifest
   model, summary statistics, MoonBit `list`/`validate`, the process-group host
   primitive with an orphan test, and the full MoonBit runner/artifact/report.
+- **2026-10-21 (P2.3, gather):** added the `columnar-gather` generator and
+  `workloads/gather/` v1 with Rust, MoonBit and C implementations and recorded
+  fault injection. Four clean-tree runs were `unstable` as the host got busier
+  (CV 5–22 %), while a compute kernel on the same host held CV 2.0 %, so the
+  workload stays `draft` and the artifact is the next task.
 - **2026-10-21 (P2.2, hash join):** added `workloads/hash-join/` v1 with Rust,
   MoonBit and C implementations, an order-independent checksum so the gate
   compares answers rather than algorithms, recorded fault injection, and a
