@@ -39,6 +39,7 @@ schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
 workloads/numeric-scan/      micro workload; MoonBit, Rust, C17
 workloads/hash-join/         component workload; MoonBit, Rust, C17
+workloads/gather/            component workload; MoonBit, Rust, C17
 workloads/_template/         copyable scaffold (not discovered)
 moonperf/                    MoonBit core: full experiment loop + CLI (P1 accepted)
 mpf/                         Python bootstrap and temporary oracle
