@@ -61,13 +61,22 @@ async test "timeout kills the process group" {
   let pid_text = @fs.read_file(child_pid_path).text() catch {
     _ => abort("cannot read child pid")
   }
-  @async.sleep(100)
-  inspect(
-    @fs.exists("/proc/" + pid_text.trim().to_owned()) catch {
-      _ => false
-    },
-    content="false",
-  )
+  let mut live = true
+  for _ in 0..<20 {
+    let status = @fs.read_file(
+      "/proc/" + pid_text.trim().to_owned() + "/status",
+    ).text() catch {
+      _ => ""
+    }
+    if status.length() == 0 ||
+      status.contains("State:\tZ") ||
+      status.contains("State:\tX") {
+      live = false
+      break
+    }
+    @async.sleep(50)
+  }
+  inspect(live, content="false")
   @fs.rmdir(directory, recursive=true) catch {
     _ => ()
   }
