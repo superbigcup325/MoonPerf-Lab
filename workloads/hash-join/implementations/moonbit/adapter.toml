@@ -1,0 +1,4 @@
+schema_version = 1
+language = "MoonBit"
+summary = "Records materialized as one Array[UInt64]; chained hash table with 64-bit slot indices (multiply-shift hash, load factor <= 0.5); Bench::keep across repeats; moon build --target native --release"
+build_dir = "_build"

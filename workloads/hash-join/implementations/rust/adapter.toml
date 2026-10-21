@@ -1,0 +1,4 @@
+schema_version = 1
+language = "Rust"
+summary = "Reference: one Vec<u64> of records; chained table over the build half (multiply-shift hash, 64-bit slots, load factor <= 0.5); black_box across repeats; rustc --edition 2021 -C opt-level=3 -C target-cpu=native"
+build_dir = "target"

@@ -1,0 +1,28 @@
+schema_version = 1
+name = "hash-join"
+version = 1
+status = "active"
+tier = "component"
+summary = "Build a hash table over the first half of a record stream and probe it with the second half; count the matching (build, probe) pairs and checksum their payloads."
+
+[dataset]
+generator = "structured-records"
+count = 1_000_000
+seed = 20261024
+
+[dataset.params]
+key_bits = 20
+payload_min = 0
+payload_max = 1_000_000
+
+[verify]
+mode = "exact"
+fields = ["build_rows", "probe_rows", "pairs", "checksum"]
+reference = "rust"
+
+[measurement]
+warmup = 3
+repeats = 20
+timeout_s = 120
+inner_repeats = 20
+max_cv = 0.05

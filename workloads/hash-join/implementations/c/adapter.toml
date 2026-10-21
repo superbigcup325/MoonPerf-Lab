@@ -1,0 +1,4 @@
+schema_version = 1
+language = "C17"
+summary = "Records materialized as one uint64_t array; chained hash table with 64-bit slot indices (multiply-shift hash, load factor <= 0.5); empty-asm barrier across repeats; cc -std=c17 -O3 -march=native"
+build_dir = "_build"
