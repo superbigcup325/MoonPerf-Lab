@@ -1,0 +1,4 @@
+schema_version = 1
+language = "C17"
+summary = "Values and indices as uint64_t/uint32_t arrays; gather into a per-pass output vector; position-weighted wrapping checksum; empty-asm barrier across repeats; cc -std=c17 -O3 -march=native"
+build_dir = "_build"

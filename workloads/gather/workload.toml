@@ -1,0 +1,28 @@
+schema_version = 1
+name = "gather"
+version = 1
+status = "active"
+tier = "component"
+summary = "Gather a million values through an index vector into an output vector and checksum the result; the question is indirect addressing and cache locality."
+
+[dataset]
+generator = "columnar-gather"
+count = 1_000_000
+seed = 20261025
+
+[dataset.params]
+value_min = 0
+value_max = 1_000_000
+locality = 16
+
+[verify]
+mode = "exact"
+fields = ["rows", "checksum"]
+reference = "rust"
+
+[measurement]
+warmup = 3
+repeats = 20
+timeout_s = 120
+inner_repeats = 80
+max_cv = 0.05

@@ -1,0 +1,4 @@
+schema_version = 1
+language = "Rust"
+summary = "Reference: values and indices as Vec<u64>/Vec<u32>; gather into a per-pass output vector, unchecked reads; position-weighted wrapping checksum; black_box across repeats; rustc -C opt-level=3 -C target-cpu=native"
+build_dir = "target"

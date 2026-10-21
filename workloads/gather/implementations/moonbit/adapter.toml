@@ -1,0 +1,4 @@
+schema_version = 1
+language = "MoonBit"
+summary = "Values as Array[UInt64] and indices as Array[Int]; gather into a per-pass output vector; position-weighted wrapping checksum; Bench::keep across repeats; moon build --target native --release"
+build_dir = "_build"

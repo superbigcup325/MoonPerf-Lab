@@ -42,6 +42,7 @@ KNOWN_GENERATORS = (
     "structured-records",
     "strings",
     "nullable-columns",
+    "columnar-gather",
 )
 
 
