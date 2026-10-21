@@ -63,7 +63,7 @@ dependency that has not been proven on this toolchain.
 | Controlled measurement host | Partial | `powersave` laptop; latest `ok` artifact: CV 3.62 % C, 3.99 % Rust, 1.90 % MoonBit, all under the 5 % gate | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
 | CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
 | Committed valid artifacts | Implemented | Three `ok` artifacts under `results/numeric-scan/`; the latest (`20261021T055715Z-a47130edbf4b`) has three implementations | One artifact per new workload still missing |
-| Dataset generators | Partial | Registry in `core/dataset` (`validate`/`generate` by id); `uniform-f64` and `structured-records` with golden hashes on both sides | String and nullable-column generators, and the template, are still P2.1 |
+| Dataset generators | Partial | Registry in `core/dataset` (`validate`/`generate` by id); `uniform-f64`, `structured-records` and `strings` with golden hashes on both sides | The nullable-column generator and the template are still P2.1 |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
 | Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
 
@@ -479,6 +479,10 @@ are done; strings, nullable columns and the authoring template remain.
 - **Done: `structured-records`.** A flat 16-byte record stream (little-endian
   `u64` key then `u64` payload), defined in protocol §4 with a golden SHA-256.
   It is the input the hash-join and gather workloads will use.
+- **Done: `strings`.** A dictionary-encoded string column: dictionary of ASCII
+  values, then one `skew`-biased index per row, with its own golden SHA-256. It
+  is the input for a string join, a dictionary decode or a gather on string
+  keys.
 - **Done: parity.** An independent Python reference in
   `tests/reference_generators.py` reproduces the same bytes, and both sides
   assert the same golden hashes: `moon test` and 63 Python tests pass. The
@@ -487,10 +491,9 @@ are done; strings, nullable columns and the authoring template remain.
 - **Done: parameter-scoped dataset cache.** The cache file name includes a
   digest of the parameters, so two configurations cannot silently reuse each
   other's bytes.
-- **Next:** a `strings` generator (dictionary with a skewed distribution), a
-  `nullable-columns` generator (values plus a validity bitmap), the workload
-  authoring guide and the template. Then a first workload manifest that uses
-  `structured-records` lands with the hash join in P2.2.
+- **Next:** a `nullable-columns` generator (values plus a validity bitmap),
+  then the workload authoring guide and the template. Then a first workload
+  manifest that uses `structured-records` lands with the hash join in P2.2.
 
 **Deliverable:** generators with golden hashes, protocol text for the
 interface, the authoring guide and the template.
@@ -775,18 +778,16 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: the `strings` generator.** Add a dictionary-shaped string column to
-the generator registry: a value distribution with a documented skew, a golden
-SHA-256, and the same two-sided parity proof `structured-records` already has
-(a `moon test` constant and the Python reference in `tests/`). It is the last
-missing input shape for the hash join and the columnar gather workloads, and it
-needs no host measurement.
+**Next: the `nullable-columns` generator.** Add a value column with a validity
+bitmap to the registry — the last input shape the suite needs before the hash
+join can be specified — with a golden SHA-256 and the same two-sided parity
+proof the other generators already have. It needs no host measurement.
 
 The earlier tasks are closed: P1.0-A made the oracle produce a green artifact
-(2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, and
-P2.0 added the C reference (2026-10-21). The generator interface and
-`structured-records` landed as the first P2.1 slice; see the P2 section for the
-evidence.
+(2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, P2.0
+added the C reference (2026-10-21), and the first two P2.1 slices landed the
+generator registry with `structured-records` and `strings`; see the P2 section
+for the evidence.
 
 ## Plan revision log
 
@@ -801,6 +802,13 @@ evidence.
   hash and byte parity against the Python generator; added the typed manifest
   model, summary statistics, MoonBit `list`/`validate`, the process-group host
   primitive with an orphan test, and the full MoonBit runner/artifact/report.
+- **2026-10-21 (P2.1 generators):** replaced the hard-coded `uniform-f64`
+  dataset parameters with a generic `[dataset.params]` map and a generator
+  registry in `core/dataset`; added `structured-records` (16-byte key/payload
+  records) and `strings` (dictionary plus a skewed index column), each with a
+  golden SHA-256 asserted by both `moon test` and an independent Python
+  reference; scoped the dataset cache name by a parameter digest; specified the
+  interface and both layouts in protocol §4.
 - **2026-10-21 (P1 accepted, P2 started):** closed P1 (A1–A17 green, clean-clone
   reproduction, green remote CI); refreshed the status table and the P2 plan;
   added the C17 reference for numeric-scan with the same setup semantics, an
@@ -838,5 +846,5 @@ evidence.
 | `workloads/numeric-scan/README.md` | C is an active implementation; fault injection is recorded rather than promised; two artifacts are listed with their medians, CV and setup fractions. | The table said "P2; not an MVP requirement" and the fault fixture was described as missing. |
 | `workloads/README.md` | C17 added to the implementation list; two accepted artifacts. | Stale workload table. |
 | `results/README.md` | The three-implementation artifact is the artifact of record; the two-implementation artifact remains valid. | The results index pointed only at the earlier artifact. |
-| `docs/experiment-protocol.md` | §4 now defines the generator registry, the `structured-records` layout and the golden fixtures; dataset cache naming is specified. | Two generators exist and a third is coming; the contract has to describe both. |
+| `docs/experiment-protocol.md` | §4 defines the generator registry, the `structured-records` and `strings` layouts and every golden fixture; dataset cache naming is specified. | Three generators exist; the contract has to describe each of them. |
 | `moonperf/README.md` | CLI dataset output includes the generator id; a short section describes the registry. | The interface changed and the example output would have been wrong. |

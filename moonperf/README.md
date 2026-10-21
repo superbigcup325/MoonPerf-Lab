@@ -48,9 +48,10 @@ the parity test. The 1,000,000-element golden hash is also a `moon test` case.
 
 `core/dataset` owns a registry keyed by generator id: `validate` checks the
 parameters while the manifest is parsed, and `generate` produces the bytes.
-Two ids exist: `uniform-f64` (the `numeric-scan` input) and
+Three ids exist: `uniform-f64` (the `numeric-scan` input),
 `structured-records` (fixed 16-byte key/payload records for the join and
-gather workloads, defined in protocol §4). Adding one is a branch in the
+gather workloads) and `strings` (a dictionary-encoded string column with a
+skewed index column), all defined in protocol §4. Adding one is a branch in the
 registry; the manifest parser and the artifact writer do not change. The
 dataset cache file name carries a digest of the parameters, so two
 configurations cannot silently share bytes.

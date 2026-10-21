@@ -119,6 +119,7 @@ Built-in generators (version 1):
 | --- | --- | --- | --- |
 | `uniform-f64` | IEEE-754 `f64` | `min`, `max` (numbers) | Raw little-endian, no header, `count` elements |
 | `structured-records` | 16-byte record | `key_bits` (1–64), `payload_min`, `payload_max` (integers) | Little-endian `u64 key` then `u64 payload`, no header |
+| `strings` | dictionary-encoded column | `distinct` (1–1 000 000), `value_len_min`, `value_len_max` (1–255), `skew` (1–8) | `u32` dictionary size; per entry `u32` byte length plus ASCII bytes; then `count` × `u32` index |
 
 `uniform-f64` is defined precisely so that a second implementation of the
 harness can reproduce the bytes. With 64-bit unsigned wraparound arithmetic:
@@ -155,6 +156,36 @@ for i in 0..count:
 Constraints: `1 <= key_bits <= 64`, `0 <= payload_min <= payload_max`, and the
 payload span fits in a signed 64-bit integer.
 
+`strings` is a dictionary-encoded string column: a dictionary of distinct
+values followed by one index per row. Every dictionary entry draws its length,
+then one draw per byte; every row draws `skew` values, keeps the smallest and
+scales it to the dictionary. With the same `mix` and 64-bit unsigned
+arithmetic:
+
+```
+state = seed
+write_le_u32(distinct)
+for i in 0..distinct:
+    state += 0x9E3779B97F4A7C15
+    len = value_len_min + mix(state) mod (value_len_max - value_len_min + 1)
+    write_le_u32(len)
+    for b in 0..len:
+        state += 0x9E3779B97F4A7C15
+        write_byte('a' + mix(state) mod 26)
+for row in 0..count:
+    state += 0x9E3779B97F4A7C15
+    z = mix(state)
+    repeat (skew - 1) times:
+        state += 0x9E3779B97F4A7C15
+        z = min(z, mix(state))
+    write_le_u32((z >> 32) * distinct >> 32)      # exact: both factors fit
+```
+
+`skew = 1` is a uniform index column; a larger `skew` concentrates rows on the
+low indices, which is what a join or a gather sees on a skewed key. Constraints:
+`1 <= distinct <= 1 000 000`, `1 <= value_len_min <= value_len_max <= 255`,
+`1 <= skew <= 8`.
+
 Golden fixtures, asserted by both the MoonBit core test suite and the Python
 reference in `tests/`:
 
@@ -162,6 +193,7 @@ reference in `tests/`:
 | --- | --- | --- |
 | `uniform-f64` | count 1 000 000, seed 20261020, min -1, max 1 | `fa49700b3b7bac4b840d944268bdc82291906c703a83a04cc57917c87a0a8fc2` |
 | `structured-records` | count 1 000 000, seed 20261021, key_bits 20, payload 0–1 000 000 | `a0bf64a4d028cc768a1ce138b7b4bf7cd9bd6a57244bd51c5996575682eba13c` |
+| `strings` | count 100 000, seed 20261022, distinct 10 000, lengths 4–24, skew 3 | `76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681` |
 
 Rules:
 
