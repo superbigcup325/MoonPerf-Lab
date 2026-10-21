@@ -102,10 +102,27 @@ gate is not allowed to rest on one example.
 ## Measurement notes
 
 The manifest uses `warmup = 3`, `repeats = 20`, `timeout_s = 120`,
-`inner_repeats = 20` and `max_cv = 0.05`. One kernel pass is about 22 ms on the
-recorded host, so a sample is about 0.44 s and the dataset load (16 MB plus
-the word split) is a small fraction of it. This is a `component` workload, so
-the setup gate is `setup_fraction <= 0.10`.
+`inner_repeats = 20` and `max_cv = 0.05`. One kernel pass is about 22–25 ms on
+the recorded host (a 1M-record stream: 500 000 inserts plus 500 000 probes), so
+a sample is about 0.5 s and the dataset load (16 MB plus the word split) stays
+under 3 % of it.
+
+The committed artifact
+`results/hash-join/20261021T114656Z-b0ff09ba5b87.json` was recorded from a clean
+tree on the recorded host:
+
+| Implementation | Median ns/iter | CV | Setup fraction |
+| --- | ---: | ---: | ---: |
+| `c` | 22 005 496 | 3.24 % | 2.7 % |
+| `rust` | 24 314 815 | 2.70 % | 1.7 % |
+| `moonbit` | 24 718 417 | 4.16 % | 2.0 % |
+
+All three are `ok`, with `K = 10 -> 20` slope ratios 1.04 / 1.11 / 0.97. The
+shape is the interesting part: on this memory-access-bound kernel MoonBit is
+within 1.7 % of the Rust reference, while the compute-bound `numeric-scan`
+kernel was 2.14× Rust. That is one workload on one host — it says the gap is
+kernel- and codegen-specific, not a blanket language property, and it is
+exactly the kind of question a `component` tier exists to ask.
 
 ## What would falsify the experiment
 
