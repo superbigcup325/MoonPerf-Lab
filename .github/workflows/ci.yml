@@ -53,6 +53,9 @@ jobs:
       - name: Check formatting
         working-directory: moonperf
         run: moon fmt --check
+      - name: Validate the workloads with the core
+        working-directory: moonperf
+        run: moon run cli --target native -- validate ../workloads
       - name: Check the MoonBit adapter
         working-directory: workloads/numeric-scan/implementations/moonbit
         run: |
