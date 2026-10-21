@@ -30,7 +30,7 @@ fn hex16(value : UInt64) -> String {
   let mut out = ""
   let mut index = 0
   while index < 16 {
-    let shift : Int = (15 - index) * 4
+    let shift : Int32 = (15 - index) * 4
     let nibble = ((value >> shift) & 0xFUL).to_int()
     out = out + digits[nibble:nibble + 1].to_owned()
     index = index + 1
@@ -41,7 +41,7 @@ fn hex16(value : UInt64) -> String {
 ///|
 /// Read an integer cell as a wrapping `u64`, whatever numeric width the engine
 /// chose for the column.
-fn cell_u64(column : @types.ColumnVector, row : Int) -> UInt64 {
+fn cell_u64(column : @types.ColumnVector, row : Int32) -> UInt64 {
   match column.get(row) {
     @types.Scalar::Int32(value) => value.to_int64().reinterpret_as_uint64()
     @types.Scalar::Int64(value) => value.reinterpret_as_uint64()

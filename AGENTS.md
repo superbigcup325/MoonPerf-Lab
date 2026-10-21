@@ -40,6 +40,7 @@ workloads/<name>/            one directory per workload
 workloads/numeric-scan/      micro workload; MoonBit, Rust, C17
 workloads/hash-join/         component workload; MoonBit, Rust, C17
 workloads/gather/            component workload; MoonBit, Rust, C17
+workloads/sql-groupby/       end-to-end workload; MoonBit, Rust, C17, moonlake 0.3.1
 workloads/_template/         copyable scaffold (not discovered)
 moonperf/                    MoonBit core: full experiment loop + CLI (P1 accepted)
 mpf/                         Python bootstrap and temporary oracle

@@ -151,6 +151,55 @@ jobs:
             --sha256 a413e1deb6d87790988d4331fcc264d4d12047c1b0f789134796812ccb0aa23d \
             --subject moonbit --subject c --repeat 1
 
+  sql-groupby:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the harness oracle
+        run: python -m pip install -e .
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Update the registry for the moonlake adapter
+        working-directory: workloads/sql-groupby/implementations/moonlake
+        run: moon update
+      - name: Check and build the MoonBit implementations
+        run: |
+          cd workloads/sql-groupby/implementations/moonbit
+          moon check --deny-warn --target native
+          moon fmt --check
+          ./build.sh
+          cd ../moonlake
+          moon check --deny-warn --target native
+          moon fmt --check
+          ./build.sh
+      - name: Build the Rust and C implementations
+        working-directory: workloads/sql-groupby/implementations
+        run: |
+          ./rust/build.sh
+          ./c/build.sh
+      - name: Generate the dataset with the core
+        working-directory: moonperf
+        run: |
+          mkdir -p ../results/tmp
+          moon run cli --target native -- dataset \
+            --manifest ../workloads/sql-groupby/workload.toml \
+            --out ../results/tmp/sql-groupby-dataset.csv \
+            | tee ../results/tmp/sql-identity.txt
+          grep -q d397e837ad352e06ec3d306fbe52fca32c98574a0fd3d58e2b06a7b37f45a441 \
+            ../results/tmp/sql-identity.txt
+      - name: Cross-check C, MoonBit and moonlake against the Rust reference
+        run: |
+          python scripts/crosscheck-workload.py sql-groupby \
+            --dataset results/tmp/sql-groupby-dataset.csv \
+            --sha256 d397e837ad352e06ec3d306fbe52fca32c98574a0fd3d58e2b06a7b37f45a441 \
+            --subject c --subject moonbit --subject moonlake --repeat 1
+
   runner-fixture:
     runs-on: ubuntu-latest
     timeout-minutes: 20

@@ -32,7 +32,7 @@ gaps, risks, estimates and the first task.
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0–P2.3 accepted, P2.4 next | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0–P2.4 accepted, P2.5 (suite conclusions) next | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -58,6 +58,7 @@ dependency that has not been proven on this toolchain.
 | C reference for numeric-scan | Implemented | `workloads/numeric-scan/implementations/c/`; `c-reference` CI job; cross-check script | None |
 | Hash-join workload | Implemented | `workloads/hash-join/` v1 active; three implementations; `results/hash-join/20261021T114656Z-b0ff09ba5b87.json`; fault evidence in the README | None |
 | Gather workload | Implemented | `workloads/gather/` v1 active; three implementations; `results/gather/20261021T140344Z-b6d5f9215963.json`; fault evidence in the README | None |
+| SQL group-by workload | Implemented | `workloads/sql-groupby/` v1 active; four implementations including moonlake 0.3.1; `results/sql-groupby/20261021T144852Z-58eace17a9f4.json` | None |
 | MoonBit framework core | Implemented | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; three clean-build artifacts validate | Generator interface and the P2 workloads are the next core work |
 | Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test when P2.1 adds generators |
 | Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; wired into the runner; orphan and timeout fixtures pass | None |
@@ -436,7 +437,7 @@ familiarity with MoonBit. Part-time or first-time MoonBit work should plan
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** in progress (2026-10-21). P2.0–P2.3 are accepted; P2.4 is next.
+**Status:** in progress (2026-10-21). P2.0–P2.4 are accepted; P2.5 (the suite conclusions and the input matrix) is next.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
@@ -573,14 +574,34 @@ interface, the authoring guide and the template — all in place.
 
 ### P2.4 · Parquet decode or end-to-end SQL through Moonlake
 
-**Status:** not started.
+**Status:** **done 2026-10-21.**
 
-- Pick the form Moonlake can expose through a public interface, without
-  reaching into private internals.
-- Prefer an end-to-end query over a Parquet decode when both are possible: it
-  is the tier that the suite currently lacks.
-- Record what the workload does and does not measure (I/O, decoding,
-  orchestration) in its README.
+- New generator `csv-records`: a deterministic ASCII table (`id,category,amount`,
+  one LF-terminated row per record) with a golden hash and two-sided parity.
+  CSV was chosen over Parquet because the harness owns dataset generation and
+  a Parquet writer belongs to a library, not to the lab; the end-to-end
+  question does not need the binary format.
+- `workloads/sql-groupby/` v1 is the first end-to-end workload and the first
+  consumer of another project: a 2 000 000-row table and one fixed GROUP BY,
+  answered four ways. Rust, C and MoonBit parse the CSV and aggregate into
+  dense category tables; the `moonlake` implementation registers the file as a
+  CSV scan source in a catalog and runs the SQL text through
+  `@moonlake.execute`, so parse, bind, plan and scan are inside the number.
+- The adapter depends on the published `superbigcup325/moonlake@0.3.1` from
+  mooncakes and nothing else from the project — no forked lab, no private
+  internals. A fresh toolchain needs `moon update` once so the registry knows
+  the version.
+- Fault injection recorded: skipping odd rows and dropping the group weight
+  both change the answer.
+- Artifact:
+  `results/sql-groupby/20261021T144852Z-58eace17a9f4.json` — `ok`, clean tree,
+  harness 0.1.1. C 26 532 583 ns/iter (CV 1.27 %), Rust 27 338 584.5 ns
+  (3.91 %), MoonBit 29 139 280 ns (1.17 %), moonlake 160 946 952 ns (3.33 %);
+  setup fractions 3.44 / 3.18 / 3.73 / 0.69 %.
+- Two answers, and the workload README keeps them apart: the hand-written
+  pipelines are within about 7 % of each other (MoonBit 1.07× Rust, C 2.9 %
+  below), and the engine is 5.9× the Rust median because the parse/plan path is
+  inside the measurement. The engine column is not a language comparison.
 
 ### P2.5 · Suite conclusions and the input matrix
 
@@ -829,17 +850,18 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: P2.4, the data-processing path.** Pick what Moonlake can expose through
-a public interface — a Parquet decode or an end-to-end SQL query — and define
-the workload around it without coupling the lab to Moonlake internals. The
-suite currently has a micro kernel, a hash-table component and a gather
-component; it has no end-to-end tier and no real data format.
+**Next: P2.5, the suite conclusions.** Four workloads now cover the three
+tiers. What P2 still owes is the written answer to "what can this suite
+conclude, and which workload should I measure next?": one small input matrix
+per workload recorded in the manifests, committed artifacts for every active
+workload, and a short note that separates kernel-level findings from
+engine-level ones.
 
 The earlier tasks are closed: P1.0-A produced a green artifact (2026-10-20),
 P1.1-A generated the dataset in MoonBit with matching bytes, P2.0 added the C
-reference (2026-10-21), P2.1 landed the generator registry with four generators
-plus the authoring guide, P2.2 added the hash join, and P2.3 added the gather
-with its own generator and artifact.
+reference, P2.1 landed the generator registry plus the authoring guide, P2.2
+added the hash join, P2.3 added the gather, and P2.4 added the CSV-to-SQL
+end-to-end path through moonlake's public interface.
 
 ## Plan revision log
 
@@ -854,6 +876,12 @@ with its own generator and artifact.
   hash and byte parity against the Python generator; added the typed manifest
   model, summary statistics, MoonBit `list`/`validate`, the process-group host
   primitive with an orphan test, and the full MoonBit runner/artifact/report.
+- **2026-10-21 (P2.4, end-to-end SQL):** added the `csv-records` generator and
+  `workloads/sql-groupby/` v1 with four implementations, including the first
+  one that consumes another project (moonlake 0.3.1 through a CSV scan source
+  and `execute`); recorded the artifact (C 26.5 ms, Rust 27.3 ms, MoonBit
+  29.1 ms, moonlake 161.0 ms per iteration) and kept the engine-versus-pipeline
+  reading separate from the language comparison.
 - **2026-10-21 (P2.3 accepted):** resized the gather dataset to 4 000 000 rows
   after the 1M version could not hold the CV gate on a shared host, recorded the
   `ok` artifact (C 10.1 ms, Rust 8.3 ms, MoonBit 16.6 ms per iteration at

@@ -36,6 +36,7 @@ clean tree on the recorded host:
 | `numeric-scan/20261021T055715Z-a47130edbf4b.json` | v5, micro | C 1058107, Rust 1042542.5, MoonBit 2228174 | 3.62 / 3.99 / 1.90 % |
 | `hash-join/20261021T114656Z-b0ff09ba5b87.json` | v1, component | C 22005496, Rust 24314815, MoonBit 24718417 | 3.24 / 2.70 / 4.16 % |
 | `gather/20261021T140344Z-b6d5f9215963.json` | v1, component | C 10109469.5, Rust 8314058.5, MoonBit 16577759 | 2.05 / 3.24 / 2.49 % |
+| `sql-groupby/20261021T144852Z-58eace17a9f4.json` | v1, end-to-end | C 26532583, Rust 27338584.5, MoonBit 29139280, moonlake 160946952 | 1.27 / 3.91 / 1.17 / 3.33 % |
 
 The earlier `numeric-scan/20261021T053956Z-f1d6607a505a.json` remains valid for
 its two implementations (CV 3.26 % Rust / 3.05 % MoonBit), and the v4 artifacts
