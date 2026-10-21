@@ -525,6 +525,36 @@ async fn scaling_wall_ns(
 }
 
 ///|
+/// The scaling diagnostic is a single-shot comparison at K = 10 and K = 20, so
+/// one noisy invocation can produce a false "optimizer elimination" verdict.
+/// Take the median of three shots per side: the threshold is unchanged, the
+/// measurement is not a coin flip.
+async fn scaling_median_ns(
+  state : RunState,
+  dataset_path : String,
+  params_path : String,
+  output_dir : String,
+  workload : @manifest.Workload,
+  repeat : Int32,
+) -> Int64? {
+  let samples : Array[Int64] = []
+  for _ in 0..<3 {
+    match
+      scaling_wall_ns(
+        state, dataset_path, params_path, output_dir, workload, repeat,
+      ) {
+      Some(value) => samples.push(value)
+      None => ()
+    }
+  }
+  if samples.length() == 0 {
+    return None
+  }
+  samples.sort()
+  Some(samples[samples.length() / 2])
+}
+
+///|
 pub async fn run_workload(
   manifest_path : String,
   out_dir : String,
@@ -732,10 +762,10 @@ pub async fn run_workload(
     }
     match state.summary {
       Some(summary) => {
-        let t10 = scaling_wall_ns(
+        let t10 = scaling_median_ns(
           state, dataset_path, params_path, out_dir, workload, 10,
         )
-        let t20 = scaling_wall_ns(
+        let t20 = scaling_median_ns(
           state, dataset_path, params_path, out_dir, workload, 20,
         )
         match (t10, t20) {

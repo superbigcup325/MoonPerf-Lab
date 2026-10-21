@@ -110,7 +110,9 @@ anything:
 - **One barrier across repeats.** A pure kernel over invariant input can be
   hoisted out of `for 0..K`. Use a compiler barrier (`Bench::keep`,
   `std::hint::black_box`, an empty asm with a memory clobber) and keep the
-  `K = 10 -> 20` slope check green.
+  `K = 10 -> 20` slope check green. The harness takes the median of three
+  shots per side, because one noisy invocation otherwise reads as "optimizer
+  elimination".
 - **No hidden flags.** A different profile, flag or algorithm is a different
   implementation id, never a flag buried in `run.sh`.
 - **Round-trippable numbers.** Floats must stay floats in JSON (print enough
