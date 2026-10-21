@@ -63,10 +63,10 @@ jobs:
         run: |
           mkdir -p ../results/tmp
           moon run cli --target native -- report \
-            ../results/numeric-scan/20261021T050315Z-9b97abaa17cd.json \
+            ../results/numeric-scan/20261021T053956Z-f1d6607a505a.json \
             --out ../results/tmp/ci-report.md
           diff -u \
-            ../results/numeric-scan/20261021T050315Z-9b97abaa17cd.md \
+            ../results/numeric-scan/20261021T053956Z-f1d6607a505a.md \
             ../results/tmp/ci-report.md
 
   rust:

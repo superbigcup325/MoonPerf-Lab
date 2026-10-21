@@ -1,12 +1,11 @@
 # moonperf — MoonBit core
 
-**Status:** P1.3 in progress. The MoonBit core owns the experiment loop:
-dataset, manifest, statistics, host primitive, correctness gate, runner,
-artifact and report. Clean builds, toolchain/build-log metadata, the shared
-`f64` load path, optimizer barriers and a median-of-three setup baseline are
-in; the first `ok` artifact is committed under `results/numeric-scan/`.
-Timeout-as-invalid-artifact and the K=10/20 scaling diagnostic are in; the
-full acceptance suite and CI remain.
+**Status:** P1 accepted (2026-10-21). The MoonBit core owns the experiment
+loop: dataset, manifest, statistics, host primitive, correctness gate, runner,
+artifact, report and CLI. Clean builds, toolchain/build-log metadata, the
+shared `f64` load path, optimizer barriers, a median-of-three setup baseline,
+timeout-as-invalid-artifact and the K=10/20 scaling diagnostic are in. The
+active `numeric-scan v5` artifact is accepted and CI is green.
 
 ## Build and test
 

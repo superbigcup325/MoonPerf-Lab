@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; first `ok` artifact, timeout/scaling and CI; A1–A17 acceptance remain | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -50,7 +50,7 @@ dependency that has not been proven on this toolchain.
 | Area | State | Evidence | Gap |
 | --- | --- | --- | --- |
 | Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | Result schema still requires a Python `harness.python` field |
-| Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml`; `mpf validate` | `status = draft`; no accepted run |
+| Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml` v5; `mpf validate` | `status = active`; accepted artifact |
 | Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 47 tests | Not the target core |
 | Python bootstrap: run/report | Oracle | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Independent cross-check; not the runtime |
 | MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
@@ -192,7 +192,7 @@ the remainder.
 
 ## P1 · Trustworthy MVP
 
-**Status:** in progress as a Python scaffold; not accepted.
+**Status:** **accepted 2026-10-21**; A1–A17 green.
 
 **Goal:** one complete, reproducible, MoonBit-owned experiment on
 `numeric-scan`, with a correctness gate that can fail, raw samples, environment
@@ -313,8 +313,8 @@ fixture. A clean clone reproduced an `ok` artifact.
 | --- | --- | --- |
 | A1 build/test all | Pass | Python 57 tests, MoonBit 19 tests, strict check/fmt |
 | A2 `mpf validate` | Pass | two committed artifacts validate |
-| A3 MoonBit numeric-scan | Pass | `results/numeric-scan/...9b97abaa17cd.json` |
-| A4 setup/CV gate | Pass | CV 1.58 %/1.29 %, setup 2.8 %/1.3 % |
+| A3 MoonBit numeric-scan | Pass | `results/numeric-scan/...f1d6607a505a.json` (v5, active) |
+| A4 setup/CV gate | Pass | CV 3.26 %/3.05 %, setup 2.6 %/1.5 % |
 | A5 no Python runtime | Pass | clean clone ran with MoonBit/Rust only |
 | A6 fault injection | Pass | timeout, build-failure and correctness-failure fixtures |
 | A7 timeout invalid artifact | Pass | `demo-scan` fixture, `measurement_ok=false` |
@@ -326,11 +326,10 @@ fixture. A clean clone reproduced an `ok` artifact.
 | A13 rerun | Pass | three independent artifacts |
 | A14 clean clone | Pass | scratch clone run, `dirty=false`, `ok` |
 | A15 hygiene | Pass | relative paths only; links checked |
-| A16 CI | Partial | workflow added; not executed on a remote |
-| A17 scaling diagnostic | Pass | slope ratios 1.02/0.83; fixture check |
+| A16 CI | Pass | [run 39550582854](https://github.com/superbigcup325/MoonPerf-Lab/actions/runs/39550582854) green on `main` |
+| A17 scaling diagnostic | Pass | slope ratios 0.96/0.94; fixture check |
 
-P1 is **not accepted yet**: A16 (remote CI execution) is the only remaining
-check; the workflow exists but has not run on a remote.
+P1 is **accepted**: all A1–A17 checks are green, including the remote CI run.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.
@@ -608,7 +607,7 @@ least one external consumer.
 | Length check | MoonBit `main.mbt` | `length % 8 == 0` | Crash/UB risk | Add check |
 | Process group | Python `start_new_session`; MoonBit no API | Group kill | Orphan processes contaminate next runs | `setsid`/`kill` or shim |
 | Host profile | Laptop `powersave`, CV 7.57 % | Controlled profile | No `ok` artifact | Establish profile; rerun |
-| Workload status | `status = draft` | `active` after gate | No accepted workload | Complete P1; flip after evidence |
+| Workload status | `status = active` (numeric-scan v5) | `active` after gate | None | Flip only with evidence |
 | Scratch artifact | `results/tmp-smoke/` (removed) | No scratch artifact under `results/` | Invalid evidence could enter the results path | Use `results/tmp/`; `results/tmp-*` ignored |
 | Docs | README/AGENTS/workloads/results | Current and target separated | Contributors misled | This revision |
 | CI | Python only | MoonBit/Rust/correctness | Regressions unseen | Add after core |

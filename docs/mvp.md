@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. The MoonBit core owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. The first `ok` artifact is committed under `results/numeric-scan/`. Timeout-as-invalid-artifact, the `K=10`/`K=20` scaling diagnostic and CI are implemented; a clean clone reproduces an `ok` artifact. The full A1–A17 suite is not yet green: A16 (remote CI execution) remains.
+**Status:** **P1 accepted 2026-10-21.** The MoonBit core owns the full experiment loop; `numeric-scan v5` is active with an accepted `ok` artifact, timeout/scaling handling, report regeneration, clean-clone reproduction and a green remote CI. All A1–A17 checks pass.
 
 ## Definition
 
@@ -260,7 +260,7 @@ The MVP is accepted only when all of these pass.
 | A13 | Same-host rerun of A3 | Same correctness verdict; medians within ±5 % |
 | A14 | Clean clone + documented setup | A3 reproduces; commit and `dirty=false` recorded |
 | A15 | Repository hygiene | No `.data/`, `_build/`, `target/`, `results/tmp/` or scratch artifact tracked |
-| A16 | CI | MoonBit, Rust and Python cross-check jobs green; no performance claims |
+| A16 | CI | MoonBit, Rust, Python and fault-fixture jobs green; no performance claims |
 | A17 | `K = 10` / `K = 20` scaling diagnostic | The slope ratio `(T20 - T10) / (10 * median)` is near 1; below 0.5 fails as suspected optimizer elimination |
 
 Acceptance is not "MoonBit is faster". A valid loss, tie or instability is a

@@ -35,8 +35,8 @@ workloads land.
 
 | Workload | Tier | Status | Implementations |
 | --- | --- | --- | --- |
-| [numeric-scan](numeric-scan/) | micro | draft | MoonBit, Rust (drafts); C planned for P2 |
+| [numeric-scan](numeric-scan/) | micro | active | MoonBit, Rust; C planned for P2 |
 
-None is `active` yet: there is no accepted artifact. The Python `mpf run` draft
-is not evidence; see the P1 status in
+`numeric-scan` is active and has an accepted `ok` artifact. The Python
+`mpf run` draft is not evidence; see the P1 status in
 [`docs/ROADMAP.md`](../docs/ROADMAP.md#current-status).

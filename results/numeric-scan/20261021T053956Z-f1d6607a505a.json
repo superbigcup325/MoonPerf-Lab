@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "experiment": {
+    "id": "20261021T053956Z-f1d6607a505a",
+    "started_at": "2026-10-21T05:39:56Z",
+    "finished_at": "2026-10-21T05:40:13Z",
+    "harness": {
+      "name": "moonperf",
+      "version": "0.1.0",
+      "runtime": "MoonBit native"
+    },
+    "source": {
+      "commit": "f1d6607a505a37cd2f1c41dd532f0dd16de92cbd",
+      "dirty": false,
+      "branch": "main"
+    },
+    "workload": {
+      "name": "numeric-scan",
+      "version": 5,
+      "tier": "micro",
+      "manifest_sha256": "030ea56151a2653cc9eb20f59cb139afb24cddf6d1bfd0130e4375054d5e5fec"
+    },
+    "dataset": {
+      "generator": "uniform-f64",
+      "count": 1000000,
+      "seed": 20261020,
+      "params": {
+        "min": -1,
+        "max": 1
+      },
+      "sha256": "fa49700b3b7bac4b840d944268bdc82291906c703a83a04cc57917c87a0a8fc2",
+      "bytes": 8000000
+    },
+    "params": {
+      "threshold": 0
+    },
+    "measurement": {
+      "warmup": 3,
+      "repeats": 20,
+      "timeout_s": 120,
+      "inner_repeats": 200,
+      "max_cv": 0.05,
+      "order": "round-robin",
+      "clock": "monotonic"
+    },
+    "environment": {
+      "os": "Linux",
+      "os_release": "CachyOS",
+      "arch": "x86_64",
+      "cpu": {
+        "model": "12th Gen Intel(R) Core(TM) i5-12500H",
+        "logical_cpus": 16,
+        "governor": "powersave"
+      },
+      "memory_bytes": 16540499968
+    },
+    "reproduce_command": "cd moonperf && moon run cli --target native -- run ../workloads/numeric-scan --out ../results/tmp/repro --data-dir ../.data --repo-root .."
+  },
+  "implementations": [
+    {
+      "id": "rust",
+      "language": "Rust",
+      "reference": true,
+      "toolchain": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "build": {
+        "ok": true,
+        "skipped": false,
+        "command": "./build.sh",
+        "duration_ms": 188.676872,
+        "log_sha256": "f4679f7943cb1030b8cc1baca83fdc49517137da1efe1aeab731ec9f6b9b8909"
+      },
+      "correctness": {
+        "ok": true,
+        "mode": "tolerance",
+        "checked_against": null,
+        "values": {
+          "n": 1000000,
+          "sum": 753.093153233965,
+          "sumsq": 333596.2268530725,
+          "min": -0.9999999805698727,
+          "max": 0.999999245877705,
+          "count_above": 500794
+        },
+        "errors": []
+      },
+      "samples_ns": [
+        993858,
+        987066,
+        1119037,
+        1021443,
+        1032570,
+        1010612,
+        996137,
+        1030003,
+        980365,
+        1014911,
+        1051687,
+        999034,
+        1047843,
+        1061891,
+        1015078,
+        983349,
+        994425,
+        1029954,
+        995071,
+        1032926
+      ],
+      "summary": {
+        "count": 20,
+        "min_ns": 980365,
+        "median_ns": 1014994.5,
+        "mean_ns": 1019863,
+        "stdev_ns": 33224.52243053077,
+        "cv": 0.03257743680330669
+      },
+      "measurement_ok": true,
+      "setup": {
+        "inner_repeats": 0,
+        "wall_ns": 5425416,
+        "fraction": 0.026030628787094112,
+        "runs": 3
+      }
+    },
+    {
+      "id": "moonbit",
+      "language": "MoonBit",
+      "reference": false,
+      "toolchain": "moon 0.1.20261016 (1af328f 2026-10-16) / v0.10.16+b1a0e846e (2026-10-16)",
+      "build": {
+        "ok": true,
+        "skipped": false,
+        "command": "./build.sh",
+        "duration_ms": 1422.362529,
+        "log_sha256": "4acad8a68de3cac83e31e6196dbbe535b242a1e1566b78d37c6661117be9bb4c"
+      },
+      "correctness": {
+        "ok": true,
+        "mode": "tolerance",
+        "checked_against": "rust",
+        "values": {
+          "n": 1000000,
+          "sum": 753.093153233965,
+          "sumsq": 333596.2268530725,
+          "min": -0.9999999805698727,
+          "max": 0.999999245877705,
+          "count_above": 500794
+        },
+        "errors": []
+      },
+      "samples_ns": [
+        2214893,
+        2164846,
+        2214588,
+        2240473,
+        2185749,
+        2179682,
+        2229048,
+        2279981,
+        2198147,
+        2245293,
+        2190841,
+        2211448,
+        2243123,
+        2481532,
+        2190203,
+        2197629,
+        2275728,
+        2231186,
+        2306850,
+        2247617
+      ],
+      "summary": {
+        "count": 20,
+        "min_ns": 2164846,
+        "median_ns": 2221970.5,
+        "mean_ns": 2236442.85,
+        "stdev_ns": 68243.52883165823,
+        "cv": 0.030514318231587373
+      },
+      "measurement_ok": true,
+      "setup": {
+        "inner_repeats": 0,
+        "wall_ns": 6828276,
+        "fraction": 0.015132839954727776,
+        "runs": 3
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "baseline": "rust",
+      "subject": "moonbit",
+      "metric": "median_ns",
+      "baseline_ns": 1014994.5,
+      "subject_ns": 2221970.5,
+      "ratio": 2.189145359900965,
+      "delta_pct": 118.9145359900965
+    }
+  ],
+  "verdict": {
+    "status": "ok",
+    "notes": [
+      "K scaling rust: K=10 -> 20 slope ratio 0.9595580074571832",
+      "K scaling moonbit: K=10 -> 20 slope ratio 0.9371657724528746"
+    ]
+  }
+}
