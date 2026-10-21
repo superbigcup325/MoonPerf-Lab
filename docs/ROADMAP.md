@@ -300,12 +300,36 @@ the kernel; MoonBit checks `length % 8 == 0`; both use an optimizer barrier
 and records toolchain and build-log SHA-256 in the artifact. The setup baseline
 is the median of three runs and is recorded with its run count.
 
-**P1.3-B (in progress):** the first `ok` artifact is committed from a
-stable-load run (`K=100`, repeats=20, setup median of three). Timeout now
-writes an `invalid` artifact with `measurement_ok=false` and no samples; the
-`K = 10` vs `K = 20` scaling diagnostic is recorded in the verdict notes; a
-slope ratio below 0.5 fails the verdict. Still open: the full A1–A17 acceptance suite and
-CI.
+**P1.3-B (done 2026-10-21):** the first `ok` artifact is committed from a
+stable-load run (`K=100`, repeats=20, setup median of three). Timeout writes an
+`invalid` artifact with `measurement_ok=false` and no samples; the `K = 10` vs
+`K = 20` scaling diagnostic is recorded in the verdict notes, and a slope ratio
+below 0.5 fails the verdict. CI now runs Python, MoonBit, Rust and the timeout
+fixture. A clean clone reproduced an `ok` artifact.
+
+**P1 acceptance status (2026-10-21):**
+
+| Test | Status | Evidence |
+| --- | --- | --- |
+| A1 build/test all | Pass | Python 57 tests, MoonBit 19 tests, strict check/fmt |
+| A2 `mpf validate` | Pass | two committed artifacts validate |
+| A3 MoonBit numeric-scan | Pass | `results/numeric-scan/...9b97abaa17cd.json` |
+| A4 setup/CV gate | Pass | CV 1.58 %/1.29 %, setup 2.8 %/1.3 % |
+| A5 no Python runtime | Pass | clean clone ran with MoonBit/Rust only |
+| A6 fault injection | Partial | timeout fixture; correctness-failure fixture missing |
+| A7 timeout invalid artifact | Pass | `demo-scan` fixture, `measurement_ok=false` |
+| A8 build failure artifact | Not yet | no fixture |
+| A9 missing field error | Partial | verifier has errors; no dedicated fixture |
+| A10 report regeneration | Partial | report is generated; no `report` CLI |
+| A11 schema validation | Pass | `mpf validate --result` |
+| A12 MoonBit validator | Pass | `validate` command; 19 tests |
+| A13 rerun | Pass | three independent artifacts |
+| A14 clean clone | Pass | scratch clone run, `dirty=false`, `ok` |
+| A15 hygiene | Pass | relative paths only; links checked |
+| A16 CI | Partial | workflow added; not executed on a remote |
+| A17 scaling diagnostic | Pass | slope ratios 1.02/0.83; fixture check |
+
+P1 is **not accepted yet**: A6, A8, A9, A10 and A16 are incomplete.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.

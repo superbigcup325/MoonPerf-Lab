@@ -41,6 +41,7 @@ workloads/numeric-scan/      first workload; MoonBit + Rust drafts
 moonperf/                    MoonBit core: full experiment loop + CLI (P1.3)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
+scripts/                     reproduction scripts
 tests/                       unittest suite and runner fixtures
 results/                     committed experiment artifacts and reports
 ```
@@ -82,8 +83,8 @@ moon fmt --check
 ```
 
 The MoonBit `run` command produced the first `ok` artifact and implements
-timeout/scaling handling and CI runs; the A1–A17 and clean-clone checks are
-still open, so it is not yet the accepted harness.
+timeout/scaling handling and CI runs; A6/A8/A9/A10/A16 are still incomplete,
+so it is not yet the accepted harness.
 The Python `mpf run` draft is only an oracle. Do not claim, quote or commit a
 performance result that was not produced by the accepted harness and recorded
 as a result artifact.
