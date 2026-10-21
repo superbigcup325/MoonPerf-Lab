@@ -28,10 +28,13 @@ Rules:
   a committed result of record. The results of record are `ok` artifacts from a
   recorded host.
 
-The accepted artifact is
-`results/numeric-scan/20261021T053956Z-f1d6607a505a.json` (numeric-scan v5,
-active, MoonBit core, `verdict=ok`, CV 3.26 % Rust / 3.05 % MoonBit, setup
-fractions 2.6 % / 1.5 %, `K=10 -> 20` slope ratios 0.96 / 0.94). The earlier
-v4 artifacts remain readable and valid. This is one workload on one host, not
-a language ranking. The invalid smoke attempt from the Python draft was a
-scratch run and was removed.
+The current artifact of record is
+`results/numeric-scan/20261021T055715Z-a47130edbf4b.json` (numeric-scan v5,
+active, MoonBit core, three implementations, `verdict=ok`). Medians:
+C 1058107 ns, Rust 1042542.5 ns, MoonBit 2228174 ns per iteration; CV 3.62 %,
+3.99 %, 1.90 %; setup fractions 3.7 %, 3.5 %, 2.0 %; `K=10 -> 20` slope ratios
+0.99, 1.14, 0.97. The earlier
+`20261021T053956Z-f1d6607a505a.json` remains valid for its two implementations
+(CV 3.26 % Rust / 3.05 % MoonBit), and the v4 artifacts remain readable. This
+is one workload on one host, not a language ranking. The invalid smoke attempt
+from the Python draft was a scratch run and was removed.

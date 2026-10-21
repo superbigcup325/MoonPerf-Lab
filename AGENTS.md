@@ -37,7 +37,7 @@ schemas/workload.schema.json workload manifest contract
 schemas/adapter.schema.json  implementation adapter contract
 schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
-workloads/numeric-scan/      first active workload; MoonBit + Rust
+workloads/numeric-scan/      first active workload; MoonBit, Rust, C17
 moonperf/                    MoonBit core: full experiment loop + CLI (P1 accepted)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
@@ -72,7 +72,8 @@ python3 -m venv .venv
 ```
 
 The MoonBit core now owns the full experiment loop. CI runs the Python spec
-job, the MoonBit core and adapter checks, the Rust build and the timeout
+job, the MoonBit core and adapter checks, the Rust and C adapter builds with a
+cross-check of the C output against the Rust reference, and the timeout
 fixture. The same authoritative checks run from `moonperf/`:
 
 ```bash

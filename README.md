@@ -162,13 +162,20 @@ environment, correctness, setup baseline, reproduction command and
 byte-for-byte report regeneration. A clean clone reproduces it, and the remote
 CI run is green. It is one workload on one host, not a language ranking.
 
+**P2 is in progress (started 2026-10-21).** The first step, a C reference for
+`numeric-scan`, is in place: the adapter, a CI cross-check against the Rust
+reference and a second accepted artifact with three implementations. The next
+step is the reusable dataset generator family that the compute and
+data-processing workloads need. The phase plan is in
+[`docs/ROADMAP.md`](docs/ROADMAP.md#p2--representative-compute-and-data-processing-workloads).
+
 What exists today:
 
 | Asset | State |
 | --- | --- |
 | [`docs/experiment-protocol.md`](docs/experiment-protocol.md) | Normative contract for a measurement, from dataset bytes to result artifact |
 | [`schemas/`](schemas/) | JSON Schema for workload manifests, adapters and result artifacts |
-| [`workloads/numeric-scan/`](workloads/numeric-scan/) | First active workload (v5); MoonBit + Rust, accepted artifact |
+| [`workloads/numeric-scan/`](workloads/numeric-scan/) | First active workload (v5); MoonBit, Rust and C17; two accepted artifacts |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
 | [`moonperf/`](moonperf/) | MoonBit core: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI |
 | [`tests/`](tests/) | 57 Python tests for the specification and runner fixtures |
@@ -176,7 +183,7 @@ What exists today:
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
 | [`docs/mvp.md`](docs/mvp.md) | MVP scope, acceptance tests and out-of-scope list |
 | [`docs/implementation-boundaries.md`](docs/implementation-boundaries.md) | What belongs in MoonBit core, adapters, host scripts and dependencies |
-| [`results/numeric-scan/`](results/numeric-scan/) | Accepted `ok` artifact and generated report |
+| [`results/numeric-scan/`](results/numeric-scan/) | Accepted `ok` artifacts and generated reports |
 
 The Python runner draft is **not** an accepted part of the architecture. It is
 kept as an oracle for the MoonBit port. Do not add new experiment features to
@@ -214,7 +221,7 @@ schemas/
   adapter.schema.json          adapter.toml contract
   result.schema.json           experiment result contract
 workloads/
-  numeric-scan/                first active workload; MoonBit + Rust
+  numeric-scan/                first active workload; MoonBit, Rust, C17
 mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
 results/                       committed experiment artifacts (none valid yet)
@@ -284,8 +291,8 @@ The experiment is complete when:
    traceable;
 5. another developer can reproduce the whole flow from the documentation.
 
-None of these conditions is "MoonBit wins". A C reference is planned for P2; it
-is not an MVP requirement.
+None of these conditions is "MoonBit wins". The C reference added in P2 is a
+compiler check on the Rust number, not an MVP requirement.
 
 ## MVP scope
 
@@ -296,9 +303,9 @@ The full specification is in [`docs/mvp.md`](docs/mvp.md).
 the correctness gate, repeated measurement with a setup baseline, JSON and
 Markdown reports, experiment metadata and reproduction instructions.
 
-**Deliberately later:** more workloads, a C reference, a web dashboard, a
-database, distributed execution, automatic parameter search, a plugin system
-and automatic bottleneck diagnosis. Those are P2/P3/P4 concerns; adding them
+**Deliberately later:** more workloads, a web dashboard, a database,
+distributed execution, automatic parameter search, a plugin system and
+automatic bottleneck diagnosis. Those are P2/P3/P4 concerns; adding them
 earlier would delay the first trustworthy measurement.
 
 ## How a workload lands
@@ -323,7 +330,7 @@ earlier would delay the first trustworthy measurement.
 | --- | --- | --- |
 | **P0 · Audit and contract** | Protocol, schemas, skeleton, capability probe, consistent docs | In place (2026-10-20) |
 | **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | **Accepted (2026-10-21)**; A1–A17 green |
-| **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | After MVP |
+| **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | **In progress (2026-10-21)**; C reference for numeric-scan accepted |
 | **P3 · Automation** | History, CI correctness, noise-aware regression detection | After P2 |
 | **P4 · Research** | Profiling, bottleneck attribution, experiment matrices, cross-project reuse | After P2/P3 |
 

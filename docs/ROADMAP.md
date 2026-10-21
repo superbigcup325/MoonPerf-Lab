@@ -1,6 +1,6 @@
 # Roadmap
 
-**Reviewed:** 2026-10-20. **Status source of truth:** this document plus
+**Reviewed:** 2026-10-21. **Status source of truth:** this document plus
 [`architecture.md`](architecture.md), [`mvp.md`](mvp.md) and
 [`implementation-boundaries.md`](implementation-boundaries.md).
 
@@ -32,7 +32,7 @@ gaps, risks, estimates and the first task.
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0 accepted, P2.1 next | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -49,27 +49,29 @@ dependency that has not been proven on this toolchain.
 
 | Area | State | Evidence | Gap |
 | --- | --- | --- | --- |
-| Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | Result schema still requires a Python `harness.python` field |
+| Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | The generator interface is still `uniform-f64`-only; P2.1 extends it |
 | Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml` v5; `mpf validate` | `status = active`; accepted artifact |
-| Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 47 tests | Not the target core |
+| Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 57 tests | Not the target core |
 | Python bootstrap: run/report | Oracle | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Independent cross-check; not the runtime |
-| MoonBit implementation of numeric-scan | Partial | `workloads/numeric-scan/implementations/moonbit/` | Setup semantics differ from Rust; unsafe byte access; no length check |
-| Rust reference implementation | Partial | `workloads/numeric-scan/implementations/rust/` | CV above gate on this host; setup semantics differ |
-| C reference | Not started | Workload README mentions it | Deferred to P2 |
-| MoonBit framework core | Implemented (MVP path) | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; clean-build artifact validates | Host stability, toolchain/build-log metadata and P1.3 checks remain |
-| Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test; port the cache/identity path |
-| Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; orphan test passes | Wire it into the experiment runner |
-| Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
-| Controlled measurement host | Partial | `K=50` on the `powersave` laptop: CV 2.07 % Rust, 2.36 % MoonBit; `ok` oracle artifact under `results/tmp/` | Still not a controlled profile; setup/clean/hoisting checks pending |
-| CI | Partial | Python spec tests only | No MoonBit/Rust build, no correctness fixtures |
-| Committed valid artifact | Implemented | `results/numeric-scan/20261021T044955Z-13f88214f2a1.json`; `verdict=ok`, dirty=false, CV 1.57 %/1.07 %, setup 3.2 %/1.5 % | Use it as the first artifact of record; acceptance tests still open |
-| Reproducibility docs | Partial | README quick start; protocol §10 | Update after the MoonBit CLI exists |
-| Hackathon evidence | Partial | One commit + uncommitted P1 work | Incremental commits, runnable demo, MoonBit-first proof |
+| MoonBit implementation of numeric-scan | Implemented | `workloads/numeric-scan/implementations/moonbit/` | None; active and timed in two artifacts |
+| Rust reference implementation | Implemented | `workloads/numeric-scan/implementations/rust/` | None; the correctness reference |
+| C reference for numeric-scan | Implemented | `workloads/numeric-scan/implementations/c/`; `c-reference` CI job; cross-check script | None |
+| MoonBit framework core | Implemented | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; three clean-build artifacts validate | Generator interface and the P2 workloads are the next core work |
+| Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test when P2.1 adds generators |
+| Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; wired into the runner; orphan and timeout fixtures pass | None |
+| Measurement setup separation | Implemented | median-of-three `--repeat 0` baseline; `setup.fraction` recorded (3.7 %, 3.5 %, 2.0 % in the latest artifact) | None |
+| Controlled measurement host | Partial | `powersave` laptop; latest `ok` artifact: CV 3.62 % C, 3.99 % Rust, 1.90 % MoonBit, all under the 5 % gate | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
+| CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
+| Committed valid artifacts | Implemented | Three `ok` artifacts under `results/numeric-scan/`; the latest (`20261021T055715Z-a47130edbf4b`) has three implementations | One artifact per new workload still missing |
+| Dataset generators | Partial | `uniform-f64` only: `core/dataset` plus a golden SHA in `moon test` | Structured/string/nullable generators are P2.1 |
+| Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
+| Hackathon evidence | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
 
 ### What the audit found
 
-These are the concrete defects that block the current P1 draft. They are the
-first tasks, not reasons to rewrite the architecture.
+These are the concrete defects that blocked the P1 draft. They are kept as the
+record of the P0 audit; P1 closed them and the current status table above is
+the live view.
 
 1. **Relative implementation paths.** `mpf/runner.py` passes
    `run.impl.directory / "build.sh"` to `subprocess` while also setting
@@ -433,36 +435,107 @@ P1.4 can follow.
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** not started.
+**Status:** in progress (2026-10-21). P2.0 is accepted; P2.1 is the next task.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
 benchmark zoo.
 
-**Tasks:**
+Work is sliced so that every step is independently verifiable and lands as its
+own commit slice.
 
-- Add a C reference for numeric-scan (compiler comparison; separate id, same
-  semantics).
-- Add dataset generators for structured records, strings and nullable columns;
-  define a small generator interface with hashes and golden bytes.
-- Add three workloads, in priority order:
-  1. **hash join** (`component`): hash tables, collisions, key distribution,
-     match rate;
-  2. **columnar gather** (`component`): indirect addressing, layout, cache
-     locality;
-  3. **Parquet decode** or an **end-to-end SQL** query (`component`/`e2e`),
-     selected by what Moonlake can expose without private internals.
-- Define a small input matrix per workload (sizes × distributions); do not
-  explode the matrix.
-- Add a workload authoring guide and a template.
-- Record a committed artifact per active workload on a controlled host.
-- Integrate one Moonlake-derived workload through a public interface; do not
-  couple the lab to Moonlake internals.
+### P2.0 · C reference for numeric-scan
+
+**Status:** **done 2026-10-21.**
+
+- The C17 adapter lives in `workloads/numeric-scan/implementations/c/` and
+  shares the setup semantics: a multiple-of-8 check, a portable little-endian
+  load into one `double` per input, one pass over the array, and an empty-asm
+  memory barrier across the repeat loop. The build profile
+  (`cc -std=c17 -O3 -march=native`) is part of the implementation id.
+- It was added by creating a directory, not by editing the core — the first
+  evidence for the "new implementation without touching the framework" rule.
+- `scripts/crosscheck-numeric-scan.py` runs both adapters on the harness
+  dataset and applies the workload's own tolerance rule. The gate was shown to
+  fail: a C kernel that starts at element 1 moves `sum` by `0.33` against a
+  `7.5e-7` limit. The new `c-reference` CI job builds both adapters and runs
+  the cross-check.
+- Artifact of record: `results/numeric-scan/20261021T055715Z-a47130edbf4b.json`
+  (`verdict=ok`, clean tree, three implementations). C 1058107 ns, Rust
+  1042542.5 ns, MoonBit 2228174 ns per iteration; CV 3.62 %, 3.99 %, 1.90 %;
+  setup fractions 3.7 %, 3.5 %, 2.0 %; `K=10 -> 20` slope ratios 0.99, 1.14,
+  0.97. C and Rust agree within 1.5 %, which is inside the sample CV: the
+  compiler check adds no gap of its own.
+
+### P2.1 · Generator interface, generators, template (next)
+
+**Status:** not started. This is the first P2.1 task.
+
+- Define the generator interface in the protocol: an id plus `(count, seed,
+  params)` produces bytes deterministically, and the artifact records the
+  generator id, its params and the SHA-256 of the bytes. Keep the existing
+  `uniform-f64` id valid; a new generator is a new id, not a redefinition.
+- Add generators in this order: structured records (fixed-width integer key,
+  integer payload), strings (a dictionary with a skewed distribution), nullable
+  columns (values plus a validity bitmap).
+- Prove parity the way `uniform-f64` is proven: a golden SHA-256 in `moon test`
+  and a byte comparison against the Python oracle.
+- Write the workload authoring guide and the template (`workloads/_template/`
+  or an authoring doc plus a fixture), so a new workload is a manifest, a
+  generator id and two adapters.
+- Decide whether a new generator needs `schema_version` 2 or an additive
+  manifest field. Additive is preferred; old artifacts must stay readable.
+
+**Deliverable:** three generators with golden hashes, protocol text for the
+interface, the authoring guide and the template.
+
+### P2.2 · Hash join (component)
+
+**Status:** not started.
+
+- Dataset: structured records with a key distribution, a build side and a probe
+  side; the manifest records the match rate and the key skew.
+- Kernel: build a hash table, probe it, emit a checksum over the matches
+  (`exact` verification on integer/checksum fields, never on floats).
+- Implementations: MoonBit and Rust; C if the compiler comparison is useful.
+- Report both the join itself and the allocation/layout choices in the shape
+  note. Fault injection: a dropped match must fail the gate.
+
+### P2.3 · Columnar gather (component)
+
+**Status:** not started.
+
+- Dataset: a columnar layout plus an index vector (indirect addressing).
+- Kernel: gather into the output vector; the question is cache locality and
+  bounds/validation cost, not arithmetic.
+- Implementations: MoonBit, Rust, and C where the loop shape is the question.
+- Fault injection: an off-by-one index or a skipped entry must fail the gate.
+
+### P2.4 · Parquet decode or end-to-end SQL through Moonlake
+
+**Status:** not started.
+
+- Pick the form Moonlake can expose through a public interface, without
+  reaching into private internals.
+- Prefer an end-to-end query over a Parquet decode when both are possible: it
+  is the tier that the suite currently lacks.
+- Record what the workload does and does not measure (I/O, decoding,
+  orchestration) in its README.
+
+### P2.5 · Suite conclusions and the input matrix
+
+**Status:** not started.
+
+- One small input matrix per workload (sizes × distributions), recorded in the
+  manifests; no explosion.
+- A note on what the suite can and cannot conclude, and a documented answer to
+  "which workload should I measure next?".
+- A committed `ok` artifact per active workload on a controlled host.
 
 **Deliverables:**
 
 - 3–4 active workloads with MoonBit + Rust (and C where useful) references;
-- reusable dataset generators;
+- reusable dataset generators with golden identities;
 - workload authoring guide and template;
 - committed artifacts and reports;
 - a short "what the suite can and cannot conclude" note.
@@ -486,7 +559,8 @@ cross-language leaderboard; a general plugin system.
 **Exit:** a small suite with reproducible artifacts, and a documented answer to
 "which workload should I measure next?"
 
-**Estimate:** 3–5 weeks.
+**Estimate:** 3–5 weeks (P2.0 took about a day; P2.1 is the largest single
+slice).
 
 ## P3 · History, CI and performance regressions
 
@@ -707,21 +781,17 @@ work. If the hackathon deadline is earlier, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**P1.0-A: make the current oracle produce one green artifact, or prove the host
-cannot.** **Status: done 2026-10-20** — see the P1.0-A result above. Fix the
-two blocking defects in `mpf/runner.py` (absolute implementation paths;
-reference-first correctness), add a regression test for each, run `mpf run` on
-a controlled host, and record either an `ok` artifact or a documented
-`unstable`/host verdict. This is the first Python work allowed
-before the port; it validates the experiment contract, the host profile and the
-measurement gate that the MoonBit core must reproduce. The small P1.0-B
-contract checks are the only other Python work; the Python architecture is not
-extended.
+**Current: P2.1 — the generator interface and the first new generator.** Add a
+generator id to the protocol and the core, generate structured records from
+`(count, seed, params)`, and prove it twice: a golden SHA-256 in `moon test`
+and byte equality with the Python oracle. It is the prerequisite for every P2
+workload, it is verifiable without a host measurement, and it must not touch
+the manifest semantics that published artifacts depend on.
 
-The first **MoonBit** task, P1.1-A, is done: the dataset is generated in
-MoonBit, the CLI parses the real manifest, and the bytes and SHA-256 match the
-Python generator. The next MoonBit task is the manifest model and the
-report/artifact port.
+The P1 tasks are closed: P1.0-A made the oracle produce a green artifact
+(2026-10-20), and P1.1-A generated the dataset in MoonBit with matching bytes
+and SHA-256. P2.0, the C reference, is also done (2026-10-21); see the P2
+section for its evidence.
 
 ## Plan revision log
 
@@ -736,6 +806,14 @@ report/artifact port.
   hash and byte parity against the Python generator; added the typed manifest
   model, summary statistics, MoonBit `list`/`validate`, the process-group host
   primitive with an orphan test, and the full MoonBit runner/artifact/report.
+- **2026-10-21 (P1 accepted, P2 started):** closed P1 (A1–A17 green, clean-clone
+  reproduction, green remote CI); refreshed the status table and the P2 plan;
+  added the C17 reference for numeric-scan with the same setup semantics, an
+  empty-asm barrier and a recorded build profile; added the C/Rust
+  cross-check script and the `c-reference` CI job; recorded the
+  three-implementation `ok` artifact
+  `20261021T055715Z-a47130edbf4b`; sliced P2 into P2.0–P2.5 with P2.1 as the
+  next verifiable task.
 
 ## Documentation change log (2026-10-20)
 
@@ -754,3 +832,14 @@ report/artifact port.
 | `workloads/numeric-scan/implementations/moonbit/adapter.toml` | Corrected the summary to name `unsafe_read_uint64_le` and the missing length check. | The manifest made a safety claim the code does not support. |
 | `.gitignore` | Ignore `results/tmp-*/` as scratch. | Prevent another `tmp-smoke` style directory from being treated as a result. |
 | Removed | `results/tmp-smoke/` and the local `.scratch/` probe. | The smoke artifact was invalid evidence; the probe was a temporary capability check. |
+
+## Documentation change log (2026-10-21)
+
+| File | Change | Reason |
+| --- | --- | --- |
+| `docs/ROADMAP.md` | Marked P2 in progress, sliced it into P2.0–P2.5, recorded the P2.0 evidence, refreshed every stale P1 status row and pointed the first task at P2.1. | P1 was accepted but the status table still described P1 gaps; P2 had no executable plan. |
+| `README.md` | Added the P2 status paragraph, corrected the workload/reference rows and removed the C reference from the "deliberately later" list. | The C reference exists now; the status section stopped at P1. |
+| `AGENTS.md` | C in the workload layout and in the CI description; still a pointer to the roadmap for progress. | The layout and CI summary were the only P1-era lines left. |
+| `workloads/numeric-scan/README.md` | C is an active implementation; fault injection is recorded rather than promised; two artifacts are listed with their medians, CV and setup fractions. | The table said "P2; not an MVP requirement" and the fault fixture was described as missing. |
+| `workloads/README.md` | C17 added to the implementation list; two accepted artifacts. | Stale workload table. |
+| `results/README.md` | The three-implementation artifact is the artifact of record; the two-implementation artifact remains valid. | The results index pointed only at the earlier artifact. |
