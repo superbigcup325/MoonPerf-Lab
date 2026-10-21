@@ -37,7 +37,9 @@ schemas/workload.schema.json workload manifest contract
 schemas/adapter.schema.json  implementation adapter contract
 schemas/result.schema.json   experiment result contract
 workloads/<name>/            one directory per workload
-workloads/numeric-scan/      first active workload; MoonBit, Rust, C17
+workloads/numeric-scan/      micro workload; MoonBit, Rust, C17
+workloads/hash-join/         component workload; MoonBit, Rust, C17
+workloads/_template/         copyable scaffold (not discovered)
 moonperf/                    MoonBit core: full experiment loop + CLI (P1 accepted)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
@@ -83,7 +85,7 @@ moon test --target native
 moon fmt --check
 ```
 
-The MoonBit `run` command is the accepted harness for `numeric-scan v5`:
+The MoonBit `run` command is the accepted harness for the active workloads:
 timeout/scaling handling, report regeneration, clean-clone reproduction and
 remote CI are green. The Python `mpf run` draft is only an oracle. Do not
 claim, quote or commit a performance result that was not produced by the

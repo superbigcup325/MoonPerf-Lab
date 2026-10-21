@@ -32,7 +32,7 @@ gaps, risks, estimates and the first task.
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0 and P2.1 accepted, P2.2 next | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0–P2.2 accepted, P2.3 next | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -56,13 +56,14 @@ dependency that has not been proven on this toolchain.
 | MoonBit implementation of numeric-scan | Implemented | `workloads/numeric-scan/implementations/moonbit/` | None; active and timed in two artifacts |
 | Rust reference implementation | Implemented | `workloads/numeric-scan/implementations/rust/` | None; the correctness reference |
 | C reference for numeric-scan | Implemented | `workloads/numeric-scan/implementations/c/`; `c-reference` CI job; cross-check script | None |
+| Hash-join workload | Implemented | `workloads/hash-join/` v1 active; three implementations; `results/hash-join/20261021T114656Z-b0ff09ba5b87.json`; fault evidence in the README | None |
 | MoonBit framework core | Implemented | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; three clean-build artifacts validate | Generator interface and the P2 workloads are the next core work |
 | Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test when P2.1 adds generators |
 | Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; wired into the runner; orphan and timeout fixtures pass | None |
 | Measurement setup separation | Implemented | median-of-three `--repeat 0` baseline; `setup.fraction` recorded (3.7 %, 3.5 %, 2.0 % in the latest artifact) | None |
 | Controlled measurement host | Partial | `powersave` laptop; latest `ok` artifact: CV 3.62 % C, 3.99 % Rust, 1.90 % MoonBit, all under the 5 % gate | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
 | CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
-| Committed valid artifacts | Implemented | Three `ok` artifacts under `results/numeric-scan/`; the latest (`20261021T055715Z-a47130edbf4b`) has three implementations | One artifact per new workload still missing |
+| Committed valid artifacts | Implemented | Four `ok` artifacts: three under `results/numeric-scan/`, one under `results/hash-join/` | Two more workloads are P2.3–P2.4 |
 | Dataset generators | Implemented | Registry in `core/dataset` (`validate`/`generate` by id); four generators with golden hashes on both sides | None |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
 | Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
@@ -434,7 +435,7 @@ familiarity with MoonBit. Part-time or first-time MoonBit work should plan
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** in progress (2026-10-21). P2.0 and P2.1 are accepted; P2.2 is next.
+**Status:** in progress (2026-10-21). P2.0–P2.2 are accepted; P2.3 is next.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
@@ -509,15 +510,35 @@ interface, the authoring guide and the template — all in place.
 
 ### P2.2 · Hash join (component)
 
-**Status:** not started.
+**Status:** **done 2026-10-21.**
 
-- Dataset: structured records with a key distribution, a build side and a probe
-  side; the manifest records the match rate and the key skew.
-- Kernel: build a hash table, probe it, emit a checksum over the matches
-  (`exact` verification on integer/checksum fields, never on floats).
-- Implementations: MoonBit and Rust; C if the compiler comparison is useful.
-- Report both the join itself and the allocation/layout choices in the shape
-  note. Fault injection: a dropped match must fail the gate.
+- `workloads/hash-join/` v1 is active. The input is one `structured-records`
+  stream: the first half is the build side, the second half is the probe side,
+  and an adapter must reject an odd record count. The split is by position,
+  documented in the workload README, so no new generator was needed.
+- The output is `build_rows`, `probe_rows`, `pairs` and a 16-hex-digit
+  `checksum` of `sum(build_payload + probe_payload)` over every matching pair
+  modulo 2^64. The checksum is a pure function of the data — order-independent
+  — so implementations can pick their table shape and still have to agree.
+- Rust, MoonBit and C implement the same chained-table strategy (64-bit slot
+  indices, load factor ≤ 0.5) over one flat `u64` array; all three produce
+  `pairs 238491` and `checksum 00000037817646df`.
+- Fault injection is recorded, not promised: dropping the build payload from
+  the checksum keeps the counters right and changes only the checksum; dropping
+  every 1000th build row changes both. A third attempt (skipping just the last
+  build row) changed nothing, which is why the evidence is a table, not one
+  example.
+- Artifact:
+  `results/hash-join/20261021T114656Z-b0ff09ba5b87.json` — `ok`, clean tree.
+  C 22.0 ms/iter (CV 3.24 %), Rust 24.3 ms (CV 2.70 %), MoonBit 24.7 ms
+  (CV 4.16 %); setup fractions 2.7/1.7/2.0 %; slope ratios 1.04/1.11/0.97.
+- The result the suite exists for: on this memory-access-bound kernel MoonBit
+  is within 1.7 % of Rust, while the compute-bound `numeric-scan` kernel is
+  2.14× Rust. One workload on one host is not a language verdict, but it says
+  the gap is kernel-specific — exactly the question the component tier adds.
+- The oracle needed one fix to support this: it now validates generator ids it
+  does not implement and only generates `uniform-f64`, and CI runs the MoonBit
+  validator for the per-generator rules.
 
 ### P2.3 · Columnar gather (component)
 
@@ -787,17 +808,17 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: P2.2, the hash join.** Use `structured-records` as the build and probe
-input, pick the hash table shape, emit a checksum over the matches, and require
-`exact` verification on the checksum and the counters. The first step is the
-manifest plus a Rust reference: a reference that runs and a checksum that the
-fault-injection test can break is what makes the MoonBit implementation
-comparable.
+**Next: P2.3, the columnar gather.** A columnar layout plus an index vector, a
+gather kernel, and the same three-implementation shape as the hash join:
+manifest, Rust reference, MoonBit and C, fault injection, committed artifact.
+The `structured-records` and `strings` generators already provide the input
+shapes; the question is cache locality and indirect addressing.
 
 The earlier tasks are closed: P1.0-A made the oracle produce a green artifact
 (2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, P2.0
-added the C reference (2026-10-21), and P2.1 landed the generator registry with
-four generators plus the authoring guide; see the P2 section for the evidence.
+added the C reference (2026-10-21), P2.1 landed the generator registry with four
+generators plus the authoring guide, and P2.2 added the hash join with three
+implementations and a recorded artifact; see the P2 section for the evidence.
 
 ## Plan revision log
 
@@ -812,6 +833,12 @@ four generators plus the authoring guide; see the P2 section for the evidence.
   hash and byte parity against the Python generator; added the typed manifest
   model, summary statistics, MoonBit `list`/`validate`, the process-group host
   primitive with an orphan test, and the full MoonBit runner/artifact/report.
+- **2026-10-21 (P2.2, hash join):** added `workloads/hash-join/` v1 with Rust,
+  MoonBit and C implementations, an order-independent checksum so the gate
+  compares answers rather than algorithms, recorded fault injection, and a
+  clean-tree `ok` artifact (C 22.0 ms, Rust 24.3 ms, MoonBit 24.7 ms per
+  iteration); taught the oracle to validate generator ids it does not generate
+  and added the MoonBit workload validator to CI.
 - **2026-10-21 (P2.1 complete):** added `nullable-columns` (values plus a
   validity bitmap) with a two-sided golden hash, wrote
   `docs/workload-authoring.md` and `workloads/_template/`, and closed P2.1; the

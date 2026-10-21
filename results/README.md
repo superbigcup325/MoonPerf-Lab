@@ -28,13 +28,15 @@ Rules:
   a committed result of record. The results of record are `ok` artifacts from a
   recorded host.
 
-The current artifact of record is
-`results/numeric-scan/20261021T055715Z-a47130edbf4b.json` (numeric-scan v5,
-active, MoonBit core, three implementations, `verdict=ok`). Medians:
-C 1058107 ns, Rust 1042542.5 ns, MoonBit 2228174 ns per iteration; CV 3.62 %,
-3.99 %, 1.90 %; setup fractions 3.7 %, 3.5 %, 2.0 %; `K=10 -> 20` slope ratios
-0.99, 1.14, 0.97. The earlier
-`20261021T053956Z-f1d6607a505a.json` remains valid for its two implementations
-(CV 3.26 % Rust / 3.05 % MoonBit), and the v4 artifacts remain readable. This
-is one workload on one host, not a language ranking. The invalid smoke attempt
-from the Python draft was a scratch run and was removed.
+There are two artifacts of record, one per active workload, both `ok` from a
+clean tree on the recorded host:
+
+| Artifact | Workload | Medians (ns/iter) | CV |
+| --- | --- | --- | --- |
+| `numeric-scan/20261021T055715Z-a47130edbf4b.json` | v5, micro | C 1058107, Rust 1042542.5, MoonBit 2228174 | 3.62 / 3.99 / 1.90 % |
+| `hash-join/20261021T114656Z-b0ff09ba5b87.json` | v1, component | C 22005496, Rust 24314815, MoonBit 24718417 | 3.24 / 2.70 / 4.16 % |
+
+The earlier `numeric-scan/20261021T053956Z-f1d6607a505a.json` remains valid for
+its two implementations (CV 3.26 % Rust / 3.05 % MoonBit), and the v4 artifacts
+remain readable. Each number belongs to one workload on one host; they are not
+summed, ranked or compared across workloads.

@@ -147,11 +147,14 @@ environment, correctness, setup baseline, reproduction command and
 byte-for-byte report regeneration. A clean clone reproduces it, and the remote
 CI run is green. It is one workload on one host, not a language ranking.
 
-**P2 is in progress (started 2026-10-21).** The first step, a C reference for
-`numeric-scan`, is in place: the adapter, a CI cross-check against the Rust
-reference and a second accepted artifact with three implementations. The next
-step is the reusable dataset generator family that the compute and
-data-processing workloads need. The phase plan is in
+**P2 is in progress (started 2026-10-21).** Three steps are in: a C reference
+for `numeric-scan`, a generator registry with four dataset shapes, and the first
+component workload, [`hash-join`](workloads/hash-join/). The suite now covers a
+compute-bound kernel and a memory-access-bound operator, and their numbers do
+not agree: MoonBit is 2.14× the Rust median on `numeric-scan` and within 1.7 %
+on `hash-join`. One workload on one host is not a language verdict — that is
+what makes it worth recording. The next step is the columnar gather; the phase
+plan is in
 [`docs/ROADMAP.md`](docs/ROADMAP.md#p2--representative-compute-and-data-processing-workloads).
 
 What exists today:
@@ -161,6 +164,7 @@ What exists today:
 | [`docs/experiment-protocol.md`](docs/experiment-protocol.md) | Normative contract for a measurement, from dataset bytes to result artifact |
 | [`schemas/`](schemas/) | JSON Schema for workload manifests, adapters and result artifacts |
 | [`workloads/numeric-scan/`](workloads/numeric-scan/) | First active workload (v5); MoonBit, Rust and C17; two accepted artifacts |
+| [`workloads/hash-join/`](workloads/hash-join/) | First component workload (v1); MoonBit, Rust and C17; accepted artifact and recorded fault injection |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
 | [`moonperf/`](moonperf/) | MoonBit core: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI |
 | [`tests/`](tests/) | 57 Python tests for the specification and runner fixtures |
@@ -168,7 +172,7 @@ What exists today:
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
 | [`docs/mvp.md`](docs/mvp.md) | MVP scope, acceptance tests and out-of-scope list |
 | [`docs/implementation-boundaries.md`](docs/implementation-boundaries.md) | What belongs in MoonBit core, adapters, host scripts and dependencies |
-| [`results/numeric-scan/`](results/numeric-scan/) | Accepted `ok` artifacts and generated reports |
+| [`results/`](results/) | Accepted `ok` artifacts and generated reports, one directory per workload |
 
 The Python runner draft is **not** an accepted part of the architecture. It is
 kept as an oracle for the MoonBit port. Do not add new experiment features to
@@ -206,7 +210,8 @@ schemas/
   adapter.schema.json          adapter.toml contract
   result.schema.json           experiment result contract
 workloads/
-  numeric-scan/                first active workload; MoonBit, Rust, C17
+  numeric-scan/                micro workload; MoonBit, Rust, C17
+  hash-join/                   component workload; MoonBit, Rust, C17
 mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
 results/                       committed experiment artifacts (none valid yet)

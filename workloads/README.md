@@ -43,8 +43,11 @@ The full contract is [`docs/experiment-protocol.md`](../docs/experiment-protocol
 | Workload | Tier | Status | Implementations |
 | --- | --- | --- | --- |
 | [numeric-scan](numeric-scan/) | micro | active | MoonBit, Rust, C17 |
+| [hash-join](hash-join/) | component | active | MoonBit, Rust, C17 |
 
-`numeric-scan` is active and has two accepted `ok` artifacts: the original
-MoonBit/Rust run and the later three-implementation run that adds the C
-reference. The Python `mpf run` draft is not evidence; see the phase status in
+Both workloads are active with a committed `ok` artifact and recorded
+fault-injection evidence. `numeric-scan` asks what a dense floating-point pass
+costs; `hash-join` asks what a chained table plus a data-dependent probe costs,
+which is the first question the micro tier cannot answer. The Python `mpf run`
+draft is not evidence; see the phase status in
 [`docs/ROADMAP.md`](../docs/ROADMAP.md#current-status).
