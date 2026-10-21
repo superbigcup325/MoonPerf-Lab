@@ -1,0 +1,3 @@
+schema_version = 1
+language = "Shell"
+summary = "Fixture subject that returns a wrong count."

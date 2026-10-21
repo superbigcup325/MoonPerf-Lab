@@ -316,10 +316,10 @@ fixture. A clean clone reproduced an `ok` artifact.
 | A3 MoonBit numeric-scan | Pass | `results/numeric-scan/...9b97abaa17cd.json` |
 | A4 setup/CV gate | Pass | CV 1.58 %/1.29 %, setup 2.8 %/1.3 % |
 | A5 no Python runtime | Pass | clean clone ran with MoonBit/Rust only |
-| A6 fault injection | Partial | timeout fixture; correctness-failure fixture missing |
+| A6 fault injection | Pass | timeout, build-failure and correctness-failure fixtures |
 | A7 timeout invalid artifact | Pass | `demo-scan` fixture, `measurement_ok=false` |
-| A8 build failure artifact | Not yet | no fixture |
-| A9 missing field error | Partial | verifier has errors; no dedicated fixture |
+| A8 build failure artifact | Pass | `demo-scan` gamma, `build.ok=false` |
+| A9 missing field error | Pass | verifier unit test reports the missing field |
 | A10 report regeneration | Partial | report is generated; no `report` CLI |
 | A11 schema validation | Pass | `mpf validate --result` |
 | A12 MoonBit validator | Pass | `validate` command; 19 tests |
@@ -329,7 +329,8 @@ fixture. A clean clone reproduced an `ok` artifact.
 | A16 CI | Partial | workflow added; not executed on a remote |
 | A17 scaling diagnostic | Pass | slope ratios 1.02/0.83; fixture check |
 
-P1 is **not accepted yet**: A6, A8, A9, A10 and A16 are incomplete.
+P1 is **not accepted yet**: A10 (a standalone report command) and A16 (remote
+CI execution) are incomplete.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.

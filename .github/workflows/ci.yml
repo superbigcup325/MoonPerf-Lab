@@ -108,8 +108,15 @@ jobs:
           data = json.load(open(path, encoding="utf-8"))
           if data["verdict"]["status"] != "invalid":
               sys.exit("timeout fixture did not produce an invalid verdict")
-          beta = next(i for i in data["implementations"] if i["id"] == "beta")
+          by_id = {i["id"]: i for i in data["implementations"]}
+          beta = by_id["beta"]
           if beta.get("measurement_ok") is not False or beta.get("samples_ns"):
               sys.exit("timeout fixture did not record the measurement failure")
-          print("timeout fixture recorded an invalid artifact")
+          gamma = by_id["gamma"]
+          if gamma["build"]["ok"] or gamma.get("samples_ns"):
+              sys.exit("build-failure fixture was not recorded")
+          delta = by_id["delta"]
+          if delta["correctness"]["ok"] or delta.get("samples_ns"):
+              sys.exit("correctness-failure fixture was not recorded")
+          print("fault fixture recorded timeout, build and correctness failures")
           PY

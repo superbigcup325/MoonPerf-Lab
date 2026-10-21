@@ -609,31 +609,52 @@ pub async fn run_workload(
     Some(index) => index
     None => raise @host.error("reference implementation not found")
   }
-  verify_implementation(
-    states[reference_index],
-    dataset_path,
-    params_path,
-    out_dir,
-    None,
-    workload,
-    workload.measurement.timeout_s,
-  )
-  let reference_values = if states[reference_index].correctness.ok {
+  if states[reference_index].build.ok {
+    verify_implementation(
+      states[reference_index],
+      dataset_path,
+      params_path,
+      out_dir,
+      None,
+      workload,
+      workload.measurement.timeout_s,
+    )
+  } else {
+    states[reference_index].correctness = {
+      ok: false,
+      mode: workload.verify.mode,
+      checked_against: None,
+      values: Map([]),
+      errors: ["build failed"],
+    }
+  }
+  let reference_values = if states[reference_index].build.ok &&
+    states[reference_index].correctness.ok {
     Some(states[reference_index].correctness.values)
   } else {
     None
   }
   for index in 0..<states.length() {
     if index != reference_index {
-      verify_implementation(
-        states[index],
-        dataset_path,
-        params_path,
-        out_dir,
-        reference_values,
-        workload,
-        workload.measurement.timeout_s,
-      )
+      if states[index].build.ok {
+        verify_implementation(
+          states[index],
+          dataset_path,
+          params_path,
+          out_dir,
+          reference_values,
+          workload,
+          workload.measurement.timeout_s,
+        )
+      } else {
+        states[index].correctness = {
+          ok: false,
+          mode: workload.verify.mode,
+          checked_against: None,
+          values: Map([]),
+          errors: ["build failed"],
+        }
+      }
     }
   }
 
@@ -833,7 +854,7 @@ pub async fn run_workload(
       summary: state.summary,
       measurement_ok: if state.measurement_error is Some(_) {
         Some(false)
-      } else if state.correctness.ok {
+      } else if state.build.ok && state.correctness.ok {
         Some(true)
       } else {
         None
