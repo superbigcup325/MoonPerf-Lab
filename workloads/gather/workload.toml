@@ -24,5 +24,5 @@ reference = "rust"
 warmup = 3
 repeats = 20
 timeout_s = 120
-inner_repeats = 200
+inner_repeats = 800
 max_cv = 0.05

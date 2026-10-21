@@ -84,11 +84,16 @@ adapter:
 ## Measurement notes
 
 The manifest uses `warmup = 3`, `repeats = 20`, `timeout_s = 120`,
-`inner_repeats = 200` and `max_cv = 0.05`. One pass is about 2.4 ms on the
-recorded host, so a sample is about 0.4 s: long enough that the process start
-and the 12 MB dataset load are a small share of it, which is what a kernel this
-short needs on a shared machine. This is a `component` workload, so the setup
-gate is `setup_fraction <= 0.10`.
+`inner_repeats = 800` and `max_cv = 0.05`. One pass is about 1.5–2.4 ms on the
+recorded host, so a sample is about 1.5 s.
+
+The inner repeat count is set by the noise model, not by taste: on this host a
+single invocation of the MoonBit adapter carries a fixed ~35 ms of variance
+(the same absolute spread at 50, 200 and 400 repeats), while Rust and C carry
+~6–10 ms. At 200 repeats that is 5–10 % CV for MoonBit and the run is
+`unstable`; at 800 it falls under 2 % and the kernel dominates the sample. The
+setup baseline is still recorded and the setup fraction stays under the 0.10
+component gate. Do not relax `max_cv` to admit a short sample.
 
 **No artifact yet — the host is the blocker, not the workload.** Four
 clean-tree runs on 2026-10-21 all came out `unstable`, with the CV rising as the
