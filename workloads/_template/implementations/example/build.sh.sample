@@ -1,0 +1,10 @@
+#!/bin/sh
+# TODO: rename to build.sh, implement, and chmod +x it. Delete this file if the
+# implementation needs no build step.
+#
+# The build runs from a clean checkout with no arguments, and its command line
+# is part of the experiment: a different profile is a different id.
+set -eu
+cd "$(dirname "$0")"
+mkdir -p _build
+echo "TODO: this is still the template placeholder" >&2

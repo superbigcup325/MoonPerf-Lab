@@ -1,0 +1,8 @@
+# TODO: rename to adapter.toml and rename this directory to the implementation id.
+#
+# The implementation id is the directory name. A different algorithm or build
+# profile is a different id, not a hidden flag.
+schema_version = 1
+language = "TODO"
+summary = "TODO: the data layout, the algorithm choice and the build profile, in one sentence."
+# build_dir = "_build"

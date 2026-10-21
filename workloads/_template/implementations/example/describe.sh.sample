@@ -1,0 +1,5 @@
+#!/bin/sh
+# TODO: rename to describe.sh, report the toolchain that actually built this
+# implementation, and chmod +x it. The output is recorded in the artifact.
+set -eu
+printf '{"toolchain": "TODO"}\n'

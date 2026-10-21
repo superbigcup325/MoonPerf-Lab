@@ -26,10 +26,17 @@ Rules:
 - A workload becomes `active` only after its correctness gate can be shown to
   fail on an injected fault and a valid artifact is recorded.
 
-See [`docs/experiment-protocol.md`](../docs/experiment-protocol.md) for the
-field-by-field contract, [`docs/mvp.md`](../docs/mvp.md) for the MVP acceptance
-tests and [`docs/ROADMAP.md`](../docs/ROADMAP.md) for the order in which
-workloads land.
+## Adding a workload
+
+Copy [`_template/`](_template/) and follow
+[`docs/workload-authoring.md`](../docs/workload-authoring.md): the template
+holds a draft manifest plus one placeholder adapter, and every file is
+`.sample` until you rename it, so a half-finished workload never appears in
+`mpf list`, `mpf validate` or `moon run cli -- validate`.
+
+The full contract is [`docs/experiment-protocol.md`](../docs/experiment-protocol.md)
+(field by field), [`docs/mvp.md`](../docs/mvp.md) (MVP acceptance tests) and
+[`docs/ROADMAP.md`](../docs/ROADMAP.md) (the order in which workloads land).
 
 ## Current workloads
 

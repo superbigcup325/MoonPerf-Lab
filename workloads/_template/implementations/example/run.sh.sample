@@ -1,0 +1,14 @@
+#!/bin/sh
+# TODO: rename to run.sh, implement, and chmod +x it.
+#
+# Contract (protocol §5): run.sh --input <dataset> --params <file>
+#                               --output <json> --repeat <K>
+#   - read the dataset once into the same representation every implementation
+#     uses, after validating its length and layout;
+#   - run the kernel exactly K times, with a compiler barrier so the loop
+#     cannot be hoisted out;
+#   - write one JSON object with the declared fields to --output;
+#   - exit 0 on success, nonzero on any failure.
+set -eu
+echo "run.sh is still the template placeholder" >&2
+exit 2

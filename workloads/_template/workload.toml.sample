@@ -1,0 +1,41 @@
+# TODO: rename to workload.toml and set name = the directory name.
+#
+# The manifest is the contract. Read docs/experiment-protocol.md before editing;
+# bump `version` every time the dataset, params, verification or measurement
+# changes, and never edit a published version in place.
+schema_version = 1
+name = "new-workload"
+version = 1
+status = "draft"
+tier = "component"
+summary = "TODO: one sentence with the question this workload answers."
+
+[dataset]
+# TODO: pick a generator id from protocol §4 and its parameters.
+generator = "structured-records"
+count = 1_000_000
+seed = 20261021
+
+[dataset.params]
+key_bits = 20
+payload_min = 0
+payload_max = 1_000_000
+
+[params]
+# TODO: workload parameters, handed to every adapter as sorted key=value lines.
+threshold = 0
+
+[verify]
+# exact for integers, strings and checksums; tolerance only for floats.
+mode = "exact"
+fields = ["checksum"]
+# The reference implementation id (must exist in implementations/ before the
+# workload can be active).
+reference = "rust"
+
+[measurement]
+warmup = 3
+repeats = 20
+timeout_s = 120
+inner_repeats = 200
+max_cv = 0.05
