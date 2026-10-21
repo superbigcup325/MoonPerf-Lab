@@ -84,10 +84,11 @@ adapter:
 ## Measurement notes
 
 The manifest uses `warmup = 3`, `repeats = 20`, `timeout_s = 120`,
-`inner_repeats = 80` and `max_cv = 0.05`. One pass is about 2.4 ms on the
-recorded host, so a sample is about 0.2 s and the dataset load (12 MB plus the
-column materialization) stays small relative to it. This is a `component`
-workload: the setup gate is `setup_fraction <= 0.10`.
+`inner_repeats = 200` and `max_cv = 0.05`. One pass is about 2.4 ms on the
+recorded host, so a sample is about 0.4 s: long enough that the process start
+and the 12 MB dataset load are a small share of it, which is what a kernel this
+short needs on a shared machine. This is a `component` workload, so the setup
+gate is `setup_fraction <= 0.10`.
 
 **No artifact yet — the host is the blocker, not the workload.** Four
 clean-tree runs on 2026-10-21 all came out `unstable`, with the CV rising as the
