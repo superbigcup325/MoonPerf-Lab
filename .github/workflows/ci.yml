@@ -61,6 +61,7 @@ jobs:
       - name: Regenerate the committed report
         working-directory: moonperf
         run: |
+          mkdir -p ../results/tmp
           moon run cli --target native -- report \
             ../results/numeric-scan/20261021T050315Z-9b97abaa17cd.json \
             --out ../results/tmp/ci-report.md
