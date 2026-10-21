@@ -30,3 +30,6 @@ Thumbs.db
 
 # Fixture runtime marker (created by the timeout fixture)
 tests/fixtures/**/calls
+
+# Local gh CLI cache
+.gh-cache/
