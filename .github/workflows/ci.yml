@@ -80,6 +80,29 @@ jobs:
         working-directory: workloads/numeric-scan/implementations/rust
         run: ./build.sh
 
+  c-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the harness oracle
+        run: python -m pip install -e .
+      - name: Toolchain versions
+        run: |
+          cc --version | head -n 1
+          rustc --version
+      - name: Build the C adapter
+        working-directory: workloads/numeric-scan/implementations/c
+        run: ./build.sh
+      - name: Build the Rust reference
+        working-directory: workloads/numeric-scan/implementations/rust
+        run: ./build.sh
+      - name: Cross-check the C output against the Rust reference
+        run: python scripts/crosscheck-numeric-scan.py --repeat 3
+
   runner-fixture:
     runs-on: ubuntu-latest
     timeout-minutes: 20
