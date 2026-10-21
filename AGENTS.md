@@ -70,8 +70,9 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The MoonBit core now owns the full experiment loop. Its authoritative checks
-run from `moonperf/`:
+The MoonBit core now owns the full experiment loop. CI runs the Python spec
+job, the MoonBit core and adapter checks, the Rust build and the timeout
+fixture. The same authoritative checks run from `moonperf/`:
 
 ```bash
 cd moonperf
@@ -81,8 +82,8 @@ moon fmt --check
 ```
 
 The MoonBit `run` command produced the first `ok` artifact and implements
-timeout/scaling handling; the A1–A17 and CI acceptance checks are still open,
-so it is not yet the accepted harness.
+timeout/scaling handling and CI runs; the A1–A17 and clean-clone checks are
+still open, so it is not yet the accepted harness.
 The Python `mpf run` draft is only an oracle. Do not claim, quote or commit a
 performance result that was not produced by the accepted harness and recorded
 as a result artifact.

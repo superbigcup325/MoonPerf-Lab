@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; first `ok` artifact committed; A1–A17/CI acceptance remain | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; first `ok` artifact, timeout/scaling and CI; A1–A17 acceptance remain | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |

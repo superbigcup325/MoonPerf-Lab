@@ -29,3 +29,87 @@ jobs:
         run: mpf validate
       - name: List workloads
         run: mpf list
+
+  moonbit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Toolchain version
+        run: moon version
+      - name: Check the core
+        working-directory: moonperf
+        run: moon check --deny-warn --target native
+      - name: Test the core
+        working-directory: moonperf
+        run: moon test --target native
+      - name: Check formatting
+        working-directory: moonperf
+        run: moon fmt --check
+      - name: Check the MoonBit adapter
+        working-directory: workloads/numeric-scan/implementations/moonbit
+        run: |
+          moon check --deny-warn --target native
+          moon fmt --check
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Toolchain version
+        run: rustc --version
+      - name: Build the reference adapter
+        working-directory: workloads/numeric-scan/implementations/rust
+        run: ./build.sh
+
+  runner-fixture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the harness
+        run: python -m pip install -e .
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Run the timeout fixture
+        working-directory: moonperf
+        run: |
+          set +e
+          moon run cli --target native -- run ../tests/fixtures/demo-scan \
+            --out ../results/tmp/ci-fixture --data-dir ../.data --repo-root ..
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "the timeout fixture unexpectedly succeeded"
+            exit 1
+          fi
+      - name: Assert the invalid artifact
+        run: |
+          python - <<'PY'
+          import glob, json, subprocess, sys
+          paths = [
+              p for p in glob.glob("results/tmp/ci-fixture/*.json")
+              if not any(k in p for k in ("sample", "setup", "warmup", "correctness", "scaling"))
+          ]
+          if len(paths) != 1:
+              sys.exit(f"expected one artifact, got {paths}")
+          path = paths[0]
+          subprocess.run([sys.executable, "-m", "mpf", "validate", "--result", path], check=True)
+          data = json.load(open(path, encoding="utf-8"))
+          if data["verdict"]["status"] != "invalid":
+              sys.exit("timeout fixture did not produce an invalid verdict")
+          beta = next(i for i in data["implementations"] if i["id"] == "beta")
+          if beta.get("measurement_ok") is not False or beta.get("samples_ns"):
+              sys.exit("timeout fixture did not record the measurement failure")
+          print("timeout fixture recorded an invalid artifact")
+          PY

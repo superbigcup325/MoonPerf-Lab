@@ -25,6 +25,6 @@ fields = ["n", "count_above"]
 [measurement]
 warmup = 0
 repeats = 2
-timeout_s = 0.2
+timeout_s = 0.5
 inner_repeats = 1
 max_cv = 1.0

@@ -167,7 +167,7 @@ numeric-scan v4 experiment now has a schema-valid `ok` artifact under
 [`results/numeric-scan/`](results/numeric-scan/): raw samples, environment,
 correctness verdict, setup baseline and reproduction command. It is one
 workload on one host, not a language ranking. The remaining MVP acceptance
-work is the A1–A17 acceptance suite and CI.
+work is the full A1–A17 acceptance suite and the remaining CI/reproduction checks.
 
 What exists today:
 
@@ -323,7 +323,7 @@ earlier would delay the first trustworthy measurement.
 | Phase | Outcome | Status |
 | --- | --- | --- |
 | **P0 · Audit and contract** | Protocol, schemas, skeleton, capability probe, consistent docs | In place (2026-10-20) |
-| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; full MoonBit loop, timeout/scaling and first artifact; A1–A17/CI acceptance remain |
+| **P1 · MVP** | One complete, reproducible experiment owned by the MoonBit core | In progress; full MoonBit loop, timeout/scaling, first artifact and CI; A1–A17 acceptance remain |
 | **P2 · Coverage** | A representative suite: hash join, columnar gather, Parquet decode, end-to-end SQL | After MVP |
 | **P3 · Automation** | History, CI correctness, noise-aware regression detection | After P2 |
 | **P4 · Research** | Profiling, bottleneck attribution, experiment matrices, cross-project reuse | After P2/P3 |
