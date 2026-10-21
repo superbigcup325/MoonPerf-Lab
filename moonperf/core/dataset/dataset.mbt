@@ -240,6 +240,66 @@ pub fn nullable_column_bytes(
 }
 
 ///|
+/// The columnar-gather generator: a dense value column plus an index vector
+/// into it.
+///
+/// Layout, little-endian: `u32 row_count`, then `row_count` × `i64` value,
+/// then `row_count` × `u32` index.
+///
+/// The index column is generated in runs of `locality` rows: every run draws a
+/// random start and then walks forward one row at a time, so `locality = 1` is
+/// a random gather and a larger value trades random access for sequential
+/// prefetch-friendly runs. Every index is in `[0, row_count)` by construction,
+/// so a kernel measure the gather itself rather than an error path.
+///
+/// Stream order: one draw per value first, then one draw per run for its start.
+pub fn columnar_gather_bytes(
+  count : Int32,
+  seed : Int64,
+  value_min : Int64,
+  value_max : Int64,
+  locality : Int32,
+) -> Bytes {
+  guard! count > 0
+  guard! seed >= 0L
+  guard! value_min >= 0L
+  guard! value_max >= value_min
+  guard! locality >= 1 && locality <= 4096
+  let span = (value_max - value_min).reinterpret_as_uint64() + 1UL
+  let values_start = 4
+  let indices_start = values_start + count * 8
+  let out : FixedArray[Byte] = FixedArray::make(
+    indices_start + count * 4,
+    b'\x00',
+  )
+  put_u32_le(out, 0, count)
+  let rng = SplitMix64::new(seed)
+  let mut row = 0
+  while row < count {
+    let value = value_min.reinterpret_as_uint64() + rng.next() % span
+    let bytes = value.to_le_bytes()
+    for offset in 0..<8 {
+      out[values_start + row * 8 + offset] = bytes.unsafe_get(offset)
+    }
+    row = row + 1
+  }
+  let mut run_start = 0
+  while run_start < count {
+    let remaining = count - run_start
+    let run_len = if remaining < locality { remaining } else { locality }
+    let window = (count - run_len + 1).to_int64().reinterpret_as_uint64()
+    let base = (rng.next() % window).to_int()
+    let mut offset = 0
+    while offset < run_len {
+      put_u32_le(out, indices_start + (run_start + offset) * 4, base + offset)
+      offset = offset + 1
+    }
+    run_start = run_start + run_len
+  }
+  Bytes::from_array(out)
+}
+
+///|
 fn required(
   params : Map[String, ParamValue],
   key : String,
@@ -305,6 +365,20 @@ pub fn validate(
         fail("dataset.params.payload_max must be at least payload_min")
       }
     }
+    "columnar-gather" => {
+      let value_min = int_param(params, "value_min", generator)
+      let value_max = int_param(params, "value_max", generator)
+      guard value_min >= 0L else {
+        fail("dataset.params.value_min must be non-negative")
+      }
+      guard value_max >= value_min else {
+        fail("dataset.params.value_max must be at least value_min")
+      }
+      let locality = int_param(params, "locality", generator)
+      guard locality >= 1L && locality <= 4096L else {
+        fail("dataset.params.locality must be between 1 and 4096")
+      }
+    }
     "nullable-columns" => {
       let value_min = int_param(params, "value_min", generator)
       let value_max = int_param(params, "value_max", generator)
@@ -367,6 +441,14 @@ pub fn generate(
         int_param(params, "key_bits", generator),
         int_param(params, "payload_min", generator),
         int_param(params, "payload_max", generator),
+      )
+    "columnar-gather" =>
+      columnar_gather_bytes(
+        count,
+        seed,
+        int_param(params, "value_min", generator),
+        int_param(params, "value_max", generator),
+        int_param(params, "locality", generator).to_int(),
       )
     "nullable-columns" =>
       nullable_column_bytes(

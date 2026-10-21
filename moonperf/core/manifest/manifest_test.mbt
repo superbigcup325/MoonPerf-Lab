@@ -230,3 +230,24 @@ test "nullable-columns rejects null_percent above 100" {
   }
   inspect(failed, content="true")
 }
+
+///|
+test "columnar-gather manifest is parsed" {
+  let text = valid_manifest
+    .replace(
+      old="generator = \"uniform-f64\"",
+      new="generator = \"columnar-gather\"",
+    )
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="value_min = 0\nvalue_max = 100\nlocality = 16",
+    )
+  let workload = @manifest.parse_manifest_text("demo-scan", text) catch {
+    _ => abort("columnar-gather manifest was rejected")
+  }
+  inspect(workload.dataset.generator, content="columnar-gather")
+  inspect(
+    @dataset.param_int(workload.dataset.params, "locality").unwrap(),
+    content="16",
+  )
+}

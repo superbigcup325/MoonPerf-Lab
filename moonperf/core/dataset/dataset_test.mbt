@@ -100,3 +100,23 @@ test "nullable-column golden hash" {
     content="d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93",
   )
 }
+
+///|
+test "columnar-gather small deterministic bytes" {
+  let data = @dataset.columnar_gather_bytes(8, 1L, 0L, 99L, 2)
+  inspect(
+    @crypto.bytes_to_hex_string(data),
+    content="08000000410000000000000013000000000000005a0000000000000023000000000000003d0000000000000030000000000000002d0000000000000021000000000000000100000002000000040000000500000001000000020000000200000003000000",
+  )
+}
+
+///|
+test "columnar-gather golden hash" {
+  let data = @dataset.columnar_gather_bytes(
+    1_000_000, 20261025L, 0L, 1_000_000L, 16,
+  )
+  inspect(
+    @dataset.sha256_hex(data),
+    content="e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79",
+  )
+}
