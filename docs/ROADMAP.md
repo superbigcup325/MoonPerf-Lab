@@ -32,7 +32,7 @@ gaps, risks, estimates and the first task.
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0 accepted, P2.1 in progress | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0 and P2.1 accepted, P2.2 next | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -49,7 +49,7 @@ dependency that has not been proven on this toolchain.
 
 | Area | State | Evidence | Gap |
 | --- | --- | --- | --- |
-| Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | String and nullable-column generators are not specified yet; P2.1 adds them |
+| Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | None; the generator interface is specified in §4 |
 | Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml` v5; `mpf validate` | `status = active`; accepted artifact |
 | Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 57 tests | Not the target core |
 | Python bootstrap: run/report | Oracle | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Independent cross-check; not the runtime |
@@ -434,7 +434,7 @@ familiarity with MoonBit. Part-time or first-time MoonBit work should plan
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** in progress (2026-10-21). P2.0 is accepted; P2.1 is under way.
+**Status:** in progress (2026-10-21). P2.0 and P2.1 are accepted; P2.2 is next.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
@@ -466,10 +466,9 @@ own commit slice.
   0.97. C and Rust agree within 1.5 %, which is inside the sample CV: the
   compiler check adds no gap of its own.
 
-### P2.1 · Generator interface, generators, template (in progress)
+### P2.1 · Generator interface, generators, template
 
-**Status:** in progress (2026-10-21). The interface and `structured-records`
-are done; strings, nullable columns and the authoring template remain.
+**Status:** **done 2026-10-21.**
 
 - **Done: the generator interface.** `core/dataset` owns a registry
   (`validate` + `generate`) keyed by generator id, and the manifest carries
@@ -494,12 +493,19 @@ are done; strings, nullable columns and the authoring template remain.
 - **Done: parameter-scoped dataset cache.** The cache file name includes a
   digest of the parameters, so two configurations cannot silently reuse each
   other's bytes.
-- **Next:** the workload authoring guide and the template, so a new workload
-  is a manifest, a generator id and two adapters. Then the hash join lands with
-  the first `structured-records` manifest in P2.2.
+- **Done: the authoring guide and the template.** `docs/workload-authoring.md`
+  is the checklist from question to committed artifact, and
+  `workloads/_template/` is a copyable scaffold (manifest, README, one
+  placeholder adapter). Every template file carries a `.sample` suffix, so an
+  unfinished workload never appears in `mpf list`, `mpf validate` or the
+  MoonBit validator.
 
-**Deliverable:** generators with golden hashes, protocol text for the
-interface, the authoring guide and the template.
+P2.1 is complete: four generators with two-sided golden hashes, the interface
+in protocol §4, and the template. A new workload is now a manifest, a
+generator id and adapters.
+
+**Deliverable:** four generators with golden hashes, protocol text for the
+interface, the authoring guide and the template — all in place.
 
 ### P2.2 · Hash join (component)
 
@@ -781,16 +787,17 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: the workload authoring guide and the template.** Write down the steps a
-new workload follows — manifest, dataset choice, adapter contract, correctness
-gate, fault injection, measurement — and commit a template a contributor can
-copy. It closes P2.1 and makes P2.2 a matter of filling in the template rather
-than re-deriving the process.
+**Next: P2.2, the hash join.** Use `structured-records` as the build and probe
+input, pick the hash table shape, emit a checksum over the matches, and require
+`exact` verification on the checksum and the counters. The first step is the
+manifest plus a Rust reference: a reference that runs and a checksum that the
+fault-injection test can break is what makes the MoonBit implementation
+comparable.
 
 The earlier tasks are closed: P1.0-A made the oracle produce a green artifact
 (2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, P2.0
 added the C reference (2026-10-21), and P2.1 landed the generator registry with
-four generators; see the P2 section for the evidence.
+four generators plus the authoring guide; see the P2 section for the evidence.
 
 ## Plan revision log
 
@@ -805,6 +812,10 @@ four generators; see the P2 section for the evidence.
   hash and byte parity against the Python generator; added the typed manifest
   model, summary statistics, MoonBit `list`/`validate`, the process-group host
   primitive with an orphan test, and the full MoonBit runner/artifact/report.
+- **2026-10-21 (P2.1 complete):** added `nullable-columns` (values plus a
+  validity bitmap) with a two-sided golden hash, wrote
+  `docs/workload-authoring.md` and `workloads/_template/`, and closed P2.1; the
+  next task is P2.2, the hash join.
 - **2026-10-21 (P2.1 generators):** replaced the hard-coded `uniform-f64`
   dataset parameters with a generic `[dataset.params]` map and a generator
   registry in `core/dataset`; added `structured-records` (16-byte key/payload
@@ -851,3 +862,6 @@ four generators; see the P2 section for the evidence.
 | `results/README.md` | The three-implementation artifact is the artifact of record; the two-implementation artifact remains valid. | The results index pointed only at the earlier artifact. |
 | `docs/experiment-protocol.md` | §4 defines the generator registry, the `structured-records` and `strings` layouts and every golden fixture; dataset cache naming is specified. | Three generators exist; the contract has to describe each of them. |
 | `moonperf/README.md` | CLI dataset output includes the generator id; a short section describes the registry. | The interface changed and the example output would have been wrong. |
+| `docs/workload-authoring.md` | New: the workload checklist from question to committed artifact. | The rules existed across four documents; a contributor had no single path. |
+| `workloads/_template/` | New: a copyable scaffold with `.sample` files. | A new workload should not start by re-deriving the layout. |
+| `workloads/README.md` | Points at the authoring guide and the template. | The entry point for a new workload. |
