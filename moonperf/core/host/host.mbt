@@ -34,12 +34,47 @@ fn with_setsid(command : String, args : Array[String]) -> Array[String] {
 }
 
 ///|
+async fn first_child(pid : Int32) -> Int32? {
+  let path = "/proc/" +
+    pid.to_string() +
+    "/task/" +
+    pid.to_string() +
+    "/children"
+  let text = @fs.read_file(path).text() catch { _ => return None }
+  for token in text.split(" ") {
+    let value = token.trim()
+    if value.length() > 0 {
+      let child = @string.parse_int(value) catch { _ => return None }
+      return Some(child)
+    }
+  }
+  None
+}
+
+///|
+async fn process_group(pid : Int32) -> Int32? {
+  let text = @fs.read_file("/proc/" + pid.to_string() + "/status").text() catch {
+    _ => return None
+  }
+  for line in text.split("\n") {
+    if line.has_prefix("NSpgid:") {
+      let value = line.exact_view(start=7).trim().to_owned()
+      let group = @string.parse_int(value) catch { _ => return None }
+      if group > 0 {
+        return Some(group)
+      }
+    }
+  }
+  None
+}
+
+///|
 /// Run one child in a new session/process group, with a hard timeout.
 ///
 /// On Linux the child is started through `setsid -w`; a timeout kills the
-/// whole group with `kill -KILL -<pid>` and reaps the child. The caller gets
-/// only raw facts: exit code, timed-out flag, wall microseconds and the paths
-/// of the captured stdout/stderr files.
+/// whole group and reaps the child. The caller gets only raw facts: exit code,
+/// timed-out flag, wall microseconds and the paths of the captured
+/// stdout/stderr files.
 pub async fn run(
   command : String,
   args : Array[String],
@@ -84,8 +119,26 @@ pub async fn run(
     Some(exit_code) =>
       { exit_code, timed_out: false, wall_us, stdout_path, stderr_path, }
     None => {
-      let _ = @process.run("kill", ["-KILL", "-" + pid.to_string()]) catch {
+      // setsid forks the session leader on Linux. Kill that group, not only
+      // the setsid wrapper, and then release the wrapper itself.
+      let child = first_child(pid) catch { _ => None }
+      let group_pid = match child {
+        Some(child) => {
+          let group = process_group(child) catch { _ => None }
+          match group {
+            Some(group) => group
+            None => pid
+          }
+        }
+        None => pid
+      }
+      let _ = @process.run("kill", ["-KILL", "-" + group_pid.to_string()]) catch {
         _ => 0
+      }
+      if group_pid != pid {
+        let _ = @process.run("kill", ["-KILL", pid.to_string()]) catch {
+          _ => 0
+        }
       }
       let _ = @async.with_timeout_opt(1000, () => @process.wait_pid(pid)) catch {
         _ => None
