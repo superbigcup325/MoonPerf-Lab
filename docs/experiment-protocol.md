@@ -120,6 +120,7 @@ Built-in generators (version 1):
 | `uniform-f64` | IEEE-754 `f64` | `min`, `max` (numbers) | Raw little-endian, no header, `count` elements |
 | `structured-records` | 16-byte record | `key_bits` (1–64), `payload_min`, `payload_max` (integers) | Little-endian `u64 key` then `u64 payload`, no header |
 | `strings` | dictionary-encoded column | `distinct` (1–1 000 000), `value_len_min`, `value_len_max` (1–255), `skew` (1–8) | `u32` dictionary size; per entry `u32` byte length plus ASCII bytes; then `count` × `u32` index |
+| `nullable-columns` | nullable integer column | `value_min`, `value_max` (integers, ≥ 0), `null_percent` (0–100) | `u32` row count; `count` × `i64` value; `ceil(count/8)` validity bytes |
 
 `uniform-f64` is defined precisely so that a second implementation of the
 harness can reproduce the bytes. With 64-bit unsigned wraparound arithmetic:
@@ -186,6 +187,28 @@ low indices, which is what a join or a gather sees on a skewed key. Constraints:
 `1 <= distinct <= 1 000 000`, `1 <= value_len_min <= value_len_max <= 255`,
 `1 <= skew <= 8`.
 
+`nullable-columns` is an integer column with a validity bitmap. The bitmap
+follows Arrow's convention: bit `2^r` of bitmap byte `r / 8` is set when row
+`r` is valid, and every byte is fully used except the padding bits of the last
+one. A null row carries the value `0` in the value slot so that a reader which
+ignores the bitmap produces a different checksum instead of quietly
+aggregating zeros.
+
+```
+state = seed
+write_le_u32(count)
+for row in 0..count:
+    state += 0x9E3779B97F4A7C15
+    valid = mix(state) mod 100 >= null_percent
+    state += 0x9E3779B97F4A7C15
+    value = value_min + mix(state) mod (value_max - value_min + 1) if valid else 0
+    write_le_i64(value)
+    if valid: set_bit(row)
+write_bitmap_bytes()                     # ceil(count / 8) bytes, LSB first
+```
+
+Constraints: `0 <= value_min <= value_max`, `0 <= null_percent <= 100`.
+
 Golden fixtures, asserted by both the MoonBit core test suite and the Python
 reference in `tests/`:
 
@@ -194,6 +217,7 @@ reference in `tests/`:
 | `uniform-f64` | count 1 000 000, seed 20261020, min -1, max 1 | `fa49700b3b7bac4b840d944268bdc82291906c703a83a04cc57917c87a0a8fc2` |
 | `structured-records` | count 1 000 000, seed 20261021, key_bits 20, payload 0–1 000 000 | `a0bf64a4d028cc768a1ce138b7b4bf7cd9bd6a57244bd51c5996575682eba13c` |
 | `strings` | count 100 000, seed 20261022, distinct 10 000, lengths 4–24, skew 3 | `76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681` |
+| `nullable-columns` | count 100 000, seed 20261023, values 0–1 000 000, 10 % null | `d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93` |
 
 Rules:
 

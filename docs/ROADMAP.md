@@ -63,7 +63,7 @@ dependency that has not been proven on this toolchain.
 | Controlled measurement host | Partial | `powersave` laptop; latest `ok` artifact: CV 3.62 % C, 3.99 % Rust, 1.90 % MoonBit, all under the 5 % gate | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
 | CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
 | Committed valid artifacts | Implemented | Three `ok` artifacts under `results/numeric-scan/`; the latest (`20261021T055715Z-a47130edbf4b`) has three implementations | One artifact per new workload still missing |
-| Dataset generators | Partial | Registry in `core/dataset` (`validate`/`generate` by id); `uniform-f64`, `structured-records` and `strings` with golden hashes on both sides | The nullable-column generator and the template are still P2.1 |
+| Dataset generators | Implemented | Registry in `core/dataset` (`validate`/`generate` by id); four generators with golden hashes on both sides | None |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
 | Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
 
@@ -483,6 +483,9 @@ are done; strings, nullable columns and the authoring template remain.
   values, then one `skew`-biased index per row, with its own golden SHA-256. It
   is the input for a string join, a dictionary decode or a gather on string
   keys.
+- **Done: `nullable-columns`.** An integer column plus an Arrow-style validity
+  bitmap (bit set = valid; a null slot carries zero so a reader that ignores
+  the bitmap fails its checksum), with its own golden SHA-256.
 - **Done: parity.** An independent Python reference in
   `tests/reference_generators.py` reproduces the same bytes, and both sides
   assert the same golden hashes: `moon test` and 63 Python tests pass. The
@@ -491,9 +494,9 @@ are done; strings, nullable columns and the authoring template remain.
 - **Done: parameter-scoped dataset cache.** The cache file name includes a
   digest of the parameters, so two configurations cannot silently reuse each
   other's bytes.
-- **Next:** a `nullable-columns` generator (values plus a validity bitmap),
-  then the workload authoring guide and the template. Then a first workload
-  manifest that uses `structured-records` lands with the hash join in P2.2.
+- **Next:** the workload authoring guide and the template, so a new workload
+  is a manifest, a generator id and two adapters. Then the hash join lands with
+  the first `structured-records` manifest in P2.2.
 
 **Deliverable:** generators with golden hashes, protocol text for the
 interface, the authoring guide and the template.
@@ -778,16 +781,16 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: the `nullable-columns` generator.** Add a value column with a validity
-bitmap to the registry — the last input shape the suite needs before the hash
-join can be specified — with a golden SHA-256 and the same two-sided parity
-proof the other generators already have. It needs no host measurement.
+**Next: the workload authoring guide and the template.** Write down the steps a
+new workload follows — manifest, dataset choice, adapter contract, correctness
+gate, fault injection, measurement — and commit a template a contributor can
+copy. It closes P2.1 and makes P2.2 a matter of filling in the template rather
+than re-deriving the process.
 
 The earlier tasks are closed: P1.0-A made the oracle produce a green artifact
 (2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, P2.0
-added the C reference (2026-10-21), and the first two P2.1 slices landed the
-generator registry with `structured-records` and `strings`; see the P2 section
-for the evidence.
+added the C reference (2026-10-21), and P2.1 landed the generator registry with
+four generators; see the P2 section for the evidence.
 
 ## Plan revision log
 
