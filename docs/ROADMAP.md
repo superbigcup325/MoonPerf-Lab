@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; first `ok` artifact committed; timeout/scaling/CI acceptance remain | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; first `ok` artifact committed; A1–A17/CI acceptance remain | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -303,8 +303,8 @@ is the median of three runs and is recorded with its run count.
 **P1.3-B (in progress):** the first `ok` artifact is committed from a
 stable-load run (`K=100`, repeats=20, setup median of three). Timeout now
 writes an `invalid` artifact with `measurement_ok=false` and no samples; the
-`K = 1` vs `K = 10` scaling diagnostic is recorded in the verdict notes and
-fails the verdict below 5×. Still open: the full A1–A17 acceptance suite and
+`K = 10` vs `K = 20` scaling diagnostic is recorded in the verdict notes; a
+slope ratio below 0.5 fails the verdict. Still open: the full A1–A17 acceptance suite and
 CI.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
@@ -359,7 +359,7 @@ old artifacts readable.
 - `experiment-protocol.md` §5: `run.sh --repeat 0` is the setup baseline.
 - `experiment-protocol.md` §6: the reference is verified first.
 - `experiment-protocol.md` §7: record the setup baseline, its fraction and the
-  `K = 1` / `K = 10` scaling diagnostic; do not subtract the baseline from the
+  `K = 10` / `K = 20` slope diagnostic; do not subtract the baseline from the
   recorded sample.
 - No change to the meaning of raw samples, medians, comparisons or verdicts.
 
@@ -579,7 +579,7 @@ least one external consumer.
 | Measurement setup | `mpf/runner.py` wall/K | Setup baseline + K tuning | Setup contaminates micro results | Add `K=0`; report fraction |
 | Setup semantics | Rust `Vec<f64>` vs MoonBit bytes | Same `f64` array | Unfair kernel comparison | Materialize in both |
 | Dataset cache mismatch | `mpf/dataset.py` overwrites on mismatch | Hard failure on mismatch | Hides a changed generator/cache | Fail loudly; keep the file |
-| Optimizer elimination | `--repeat` loop in MoonBit/Rust drafts | Compiler barrier + scaling check | `K` iterations may measure one scan | Add `black_box`/`keep`; verify `K=1` vs `K=10` |
+| Optimizer elimination | `--repeat` loop in MoonBit/Rust drafts | Compiler barrier + scaling check | `K` iterations may measure one scan | Add `black_box`/`keep`; verify the `K=10 -> 20` slope ratio |
 | Length check | MoonBit `main.mbt` | `length % 8 == 0` | Crash/UB risk | Add check |
 | Process group | Python `start_new_session`; MoonBit no API | Group kill | Orphan processes contaminate next runs | `setsid`/`kill` or shim |
 | Host profile | Laptop `powersave`, CV 7.57 % | Controlled profile | No `ok` artifact | Establish profile; rerun |
@@ -599,7 +599,7 @@ least one external consumer.
 | Measurement host is noisy | CV 7.57 % at `K=10` on `powersave` | High / high | Controlled host profile; tune `K`; CV gate | Rerun; `setup_fraction`; 20-run noise study | P1 |
 | Porting effort is underestimated | ~1k lines of Python logic + new host primitive + tests | Medium / high | Slice the port; Python oracle; contract tests | Each slice passes a golden/parity test | P1 |
 | Semantic drift across languages | Rust `Vec<f64>` vs MoonBit byte scan | High / medium | Same setup representation; shared fixtures; review | Fault injection + byte-identical dataset + output types | P1 |
-| Optimizer eliminates the repeated kernel | Unverified `for 0..K` loop with pure `scan` | High / medium | Compiler barrier (`Bench::keep`, `black_box`, volatile sink) | `K=1` vs `K=10` scaling test; inspect generated code | P1 |
+| Optimizer eliminates the repeated kernel | Unverified `for 0..K` loop with pure `scan` | High / medium | Compiler barrier (`Bench::keep`, `black_box`, volatile sink) | `K=10` vs `K=20` slope test; inspect generated code | P1 |
 | Scope creep | Dashboard/DB/auto-diagnosis are attractive | Medium / high | Explicit out-of-scope table; MVP exit gate | PR checklist | P1–P4 |
 | Hackathon rules change | 2026-09 snapshot; later monthly round may differ | Medium / medium | Cite verified source; re-check the official charter; no invented gates | Read the current charter before submission | P0/P1 |
 | Reproducibility depends on network | `moon`/`cargo` registry; toolchains | Medium / medium | Pin versions; record; optional vendor/cache; clean-env test | Fresh clone test with recorded steps | P1 |

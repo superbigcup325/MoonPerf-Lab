@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. The MoonBit core owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. The first `ok` artifact is committed under `results/numeric-scan/`. Timeout-as-invalid-artifact and the `K=1`/`K=10` scaling diagnostic are implemented. Remaining before acceptance: the full A1–A17 suite and CI.
+**Status:** P1 target, reviewed 2026-10-20. The MoonBit core owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. The first `ok` artifact is committed under `results/numeric-scan/`. Timeout-as-invalid-artifact and the `K=10`/`K=20` scaling diagnostic are implemented. Remaining before acceptance: the full A1–A17 suite and CI.
 
 ## Definition
 
@@ -147,9 +147,9 @@ The CLI exits nonzero on invalid input or an `invalid` verdict.
 - The `K` repetitions must not be hoisted by the optimizer. The adapter uses a
   compiler barrier (`Bench::keep`, `black_box`, a volatile sink or an
   equivalent). The harness runs a scaling diagnostic outside the recorded
-  samples: after subtracting the setup baseline, `K = 10` should cost about 10×
-  `K = 1` for a CPU-bound kernel. A flat curve is a bug, not a fast
-  implementation.
+  samples: the `K = 10` to `K = 20` slope should equal about ten kernels, so
+  `(T20 - T10) / (10 * median)` should be near 1. A flat curve is a bug, not a
+  fast implementation.
 - Record every raw sample. Do not trim outliers. Compute median, mean, min,
   stdev and CV from the samples in the artifact.
 - If `cv > max_cv` (default 0.05), the verdict is `unstable`; the numbers are
@@ -261,7 +261,7 @@ The MVP is accepted only when all of these pass.
 | A14 | Clean clone + documented setup | A3 reproduces; commit and `dirty=false` recorded |
 | A15 | Repository hygiene | No `.data/`, `_build/`, `target/`, `results/tmp/` or scratch artifact tracked |
 | A16 | CI | MoonBit, Rust and Python cross-check jobs green; no performance claims |
-| A17 | `K = 1` / `K = 10` scaling diagnostic | After setup subtraction, the ratio is near 10; a ratio near 1 fails as optimizer elimination |
+| A17 | `K = 10` / `K = 20` scaling diagnostic | The slope ratio `(T20 - T10) / (10 * median)` is near 1; below 0.5 fails as suspected optimizer elimination |
 
 Acceptance is not "MoonBit is faster". A valid loss, tie or instability is a
 valid outcome.

@@ -5,8 +5,8 @@ dataset, manifest, statistics, host primitive, correctness gate, runner,
 artifact and report. Clean builds, toolchain/build-log metadata, the shared
 `f64` load path, optimizer barriers and a median-of-three setup baseline are
 in; the first `ok` artifact is committed under `results/numeric-scan/`.
-Timeout-as-invalid-artifact and the K scaling diagnostic are in; the full
-acceptance suite and CI remain.
+Timeout-as-invalid-artifact and the K=10/20 scaling diagnostic are in; the
+full acceptance suite and CI remain.
 
 ## Build and test
 

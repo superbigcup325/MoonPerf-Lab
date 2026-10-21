@@ -686,29 +686,25 @@ pub async fn run_workload(
     if state.measurement_error is Some(_) {
       continue
     }
-    match state.setup {
-      Some(setup) => {
-        let t1 = scaling_wall_ns(
-          state, dataset_path, params_path, out_dir, workload, 1,
-        )
+    match state.summary {
+      Some(summary) => {
         let t10 = scaling_wall_ns(
           state, dataset_path, params_path, out_dir, workload, 10,
         )
-        match (t1, t10) {
-          (Some(t1), Some(t10)) => {
-            let base = setup.wall_ns.to_double()
-            let ratio = if t1.to_double() > base && t10.to_double() > base {
-              (t10.to_double() - base) / (t1.to_double() - base)
-            } else {
-              0.0
-            }
+        let t20 = scaling_wall_ns(
+          state, dataset_path, params_path, out_dir, workload, 20,
+        )
+        match (t10, t20) {
+          (Some(t10), Some(t20)) => {
+            let slope = (t20.to_double() - t10.to_double()) / 10.0
+            let ratio = slope / summary.median_ns
             scaling_notes.push(
               "K scaling " +
               state.implementation.id +
-              ": K=1 -> 10 ratio " +
+              ": K=10 -> 20 slope ratio " +
               ratio.to_string(),
             )
-            if ratio < 5.0 {
+            if ratio < 0.5 {
               scaling_notes.push(
                 "optimizer elimination suspected: " + state.implementation.id,
               )
@@ -725,7 +721,7 @@ pub async fn run_workload(
       }
       None => {
         scaling_notes.push(
-          "K scaling needs a setup baseline: " + state.implementation.id,
+          "K scaling needs samples: " + state.implementation.id,
         )
         scaling_failed = true
       }
