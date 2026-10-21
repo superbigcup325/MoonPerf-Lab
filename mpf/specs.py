@@ -33,7 +33,16 @@ PARAM_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 
 # Dataset generators the harness can produce (protocol section 4). A manifest
 # may only name one of these; a new algorithm gets a new id and harness code.
-SUPPORTED_GENERATORS = ("uniform-f64",)
+# Generator ids the protocol defines. The MoonBit core implements all of them
+# and owns their parameter rules; the Python oracle validates the id and the
+# manifest structure, and implements generation for `uniform-f64` only (the
+# workload it cross-checks).
+KNOWN_GENERATORS = (
+    "uniform-f64",
+    "structured-records",
+    "strings",
+    "nullable-columns",
+)
 
 
 class SpecError(Exception):
@@ -252,10 +261,10 @@ def _semantic_problems(
 
     dataset = data.get("dataset", {})
     generator = str(dataset.get("generator", ""))
-    if generator not in SUPPORTED_GENERATORS:
+    if generator not in KNOWN_GENERATORS:
         problems.append(
-            f"dataset.generator '{generator}' is not implemented by the harness "
-            f"(supported: {', '.join(SUPPORTED_GENERATORS)})"
+            f"dataset.generator '{generator}' is not a built-in generator "
+            f"(known: {', '.join(KNOWN_GENERATORS)})"
         )
     elif generator == "uniform-f64":
         params = dataset.get("params", {})

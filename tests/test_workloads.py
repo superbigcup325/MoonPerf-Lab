@@ -201,7 +201,7 @@ class WorkloadSemanticsTest(unittest.TestCase):
             )
             with self.assertRaises(SpecError) as raised:
                 load_workload(manifest_path)
-            self.assertIn("not implemented by the harness", str(raised.exception))
+            self.assertIn("not a built-in generator", str(raised.exception))
 
     def test_uniform_f64_requires_bounded_params(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
