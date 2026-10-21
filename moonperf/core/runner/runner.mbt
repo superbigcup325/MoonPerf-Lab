@@ -760,7 +760,9 @@ pub async fn run_workload(
       max_cv: workload.measurement.max_cv,
     },
     environment,
-    reproduce_command: "mpf run workloads/" + workload.name,
+    reproduce_command: "cd moonperf && moon run cli --target native -- run ../workloads/" +
+    workload.name +
+    " --out ../results/tmp/repro --data-dir ../.data --repo-root ..",
     implementations,
     comparisons,
     verdict_status,
