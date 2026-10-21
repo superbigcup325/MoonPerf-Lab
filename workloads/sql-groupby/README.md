@@ -99,12 +99,23 @@ recorded, not promised. Two injected faults on the C adapter:
 about 170 ms for the engine at 2 000 000 rows, so a sample is 0.3 s and 1.7 s
 respectively; the setup baseline stays under 4 % for all four.
 
-The artifact of record is `results/sql-groupby/` (see the results index). The
-shape to read from it:
+The artifact of record is
+`results/sql-groupby/20261021T144852Z-58eace17a9f4.json`: clean tree,
+`verdict=ok`, harness 0.1.1.
+
+| Implementation | Median ns/iter | CV | Setup fraction |
+| --- | ---: | ---: | ---: |
+| `c` | 26 532 583 | 1.27 % | 3.44 % |
+| `rust` | 27 338 584.5 | 3.91 % | 3.18 % |
+| `moonbit` | 29 139 280 | 1.17 % | 3.73 % |
+| `moonlake` | 160 946 952 | 3.33 % | 0.69 % |
+
+`K=10 -> 20` slope ratios are 0.95 / 0.97 / 0.96 / 1.10. Read it as two
+answers:
 
 - the three hand-written pipelines land within about 7 % of each other, with
-  MoonBit at 1.07× the Rust median;
-- the engine is about 6× the Rust median for this query at this size.
+  MoonBit at 1.07× the Rust median and C 2.9 % below it;
+- the engine is 5.9× the Rust median for this query at this size.
 
 The engine number is a *path* measurement: parsing SQL, binding, planning and
 the scan source's own CSV reader are inside it, and a hand-written pipeline
