@@ -43,8 +43,7 @@ pub struct Dataset {
   generator : String
   count : Int32
   seed : Int64
-  min_value : Double
-  max_value : Double
+  params : Map[String, @dataset.ParamValue]
 }
 
 ///|
@@ -255,16 +254,22 @@ fn parse_dataset(
   if seed < 0L {
     fail("dataset.seed must be non-negative")
   }
-  let params = required_table(table, "params", "dataset")
-  let min_value = required_number(params, "min", "dataset.params")
-  let max_value = required_number(params, "max", "dataset.params")
-  if !(min_value < max_value) {
-    fail("dataset.params.min must be below dataset.params.max")
+  let raw_params = required_table(table, "params", "dataset")
+  let params : Map[String, @dataset.ParamValue] = Map([])
+  for key, value in raw_params {
+    params[key] = match value {
+      @toml.TomlInteger(number) => @dataset.ParamValue::Int(number)
+      @toml.TomlFloat(number) => @dataset.ParamValue::Float(number)
+      @toml.TomlString(text) => @dataset.ParamValue::Text(text)
+      _ => fail("dataset.params." + key + " must be a scalar")
+    }
   }
-  if generator != "uniform-f64" {
-    fail("dataset.generator is not implemented by the core: " + generator)
+  // The generator registry owns the per-generator parameter rules, so the
+  // manifest stays agnostic about which generators exist.
+  @dataset.validate(generator, params) catch {
+    @dataset.DatasetError::Message(message) => fail(message)
   }
-  { generator, count, seed, min_value, max_value, }
+  { generator, count, seed, params, }
 }
 
 ///|

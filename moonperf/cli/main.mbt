@@ -177,18 +177,20 @@ async fn dataset(args : Array[String]) -> Unit {
   let workload = @manifest.load_workload(manifest) catch {
     @manifest.ManifestError::Message(message) => abort(message)
   }
-  let data = @dataset.uniform_f64_bytes(
+  let data = @dataset.generate(
+    workload.dataset.generator,
     workload.dataset.count,
     workload.dataset.seed,
-    workload.dataset.min_value,
-    workload.dataset.max_value,
-  )
+    workload.dataset.params,
+  ) catch {
+    @dataset.DatasetError::Message(message) => abort(message)
+  }
   @fs.write_file(out, data) catch {
     _ => abort("cannot write " + out)
   }
   let hash = @dataset.sha256_hex(data)
   println(
-    "{\"name\":\"\{workload.name}\",\"count\":\{workload.dataset.count},\"seed\":\{workload.dataset.seed},\"sha256\":\"\{hash}\",\"bytes\":\{data.length()}}",
+    "{\"name\":\"\{workload.name}\",\"generator\":\"\{workload.dataset.generator}\",\"count\":\{workload.dataset.count},\"seed\":\{workload.dataset.seed},\"sha256\":\"\{hash}\",\"bytes\":\{data.length()}}",
   )
 }
 

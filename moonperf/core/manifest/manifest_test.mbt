@@ -40,7 +40,10 @@ test "valid manifest is parsed" {
   inspect(workload.name, content="demo-scan")
   inspect(workload.version, content="1")
   inspect(workload.dataset.count, content="16")
-  inspect(workload.dataset.min_value, content="-1")
+  inspect(
+    @dataset.param_float(workload.dataset.params, "min").unwrap(),
+    content="-1",
+  )
   inspect(workload.verify.mode, content="tolerance")
   inspect(workload.verify.fields.length(), content="2")
   inspect(workload.measurement.max_cv, content="0.05")
@@ -87,6 +90,62 @@ test "unknown tier is rejected" {
 ///|
 test "uniform-f64 requires min below max" {
   let text = valid_manifest.replace(old="min = -1.0", new="min = 2.0")
+  let failed = try {
+    ignore(@manifest.parse_manifest_text("demo-scan", text))
+    false
+  } catch {
+    @manifest.ManifestError::Message(_) => true
+  }
+  inspect(failed, content="true")
+}
+
+///|
+test "structured-records manifest is parsed" {
+  let text = valid_manifest
+    .replace(
+      old="generator = \"uniform-f64\"",
+      new="generator = \"structured-records\"",
+    )
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="key_bits = 8\npayload_min = 0\npayload_max = 100",
+    )
+  let workload = @manifest.parse_manifest_text("demo-scan", text) catch {
+    _ => abort("structured-records manifest was rejected")
+  }
+  inspect(workload.dataset.generator, content="structured-records")
+  inspect(
+    @dataset.param_int(workload.dataset.params, "key_bits").unwrap(),
+    content="8",
+  )
+}
+
+///|
+test "unknown generator is rejected" {
+  let text = valid_manifest.replace(
+    old="generator = \"uniform-f64\"",
+    new="generator = \"made-up\"",
+  )
+  let failed = try {
+    ignore(@manifest.parse_manifest_text("demo-scan", text))
+    false
+  } catch {
+    @manifest.ManifestError::Message(_) => true
+  }
+  inspect(failed, content="true")
+}
+
+///|
+test "structured-records rejects an out-of-range key_bits" {
+  let text = valid_manifest
+    .replace(
+      old="generator = \"uniform-f64\"",
+      new="generator = \"structured-records\"",
+    )
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="key_bits = 0\npayload_min = 0\npayload_max = 100",
+    )
   let failed = try {
     ignore(@manifest.parse_manifest_text("demo-scan", text))
     false

@@ -166,6 +166,25 @@ fn toml_to_json(value : @toml.TomlValue) -> Json? {
 }
 
 ///|
+/// The dataset parameters as recorded in the artifact. The manifest carries
+/// them generically, so the artifact does too; a float stays a JSON float and
+/// an integer stays a JSON integer.
+fn dataset_params_json(
+  params : Map[String, @dataset.ParamValue],
+) -> Map[String, Json] {
+  let result : Map[String, Json] = Map([])
+  for key, value in params {
+    result[key] = match value {
+      @dataset.ParamValue::Int(number) =>
+        Json::number(number.to_double(), repr=number.to_string())
+      @dataset.ParamValue::Float(number) => Json::number(number)
+      @dataset.ParamValue::Text(text) => Json::string(text)
+    }
+  }
+  result
+}
+
+///|
 fn params_json(params : Map[String, @toml.TomlValue]) -> Map[String, Json] {
   let result : Map[String, Json] = Map([])
   for key, value in params {
@@ -524,12 +543,14 @@ pub async fn run_workload(
   let data_dir = @fs.realpath(data_dir) catch { _ => data_dir }
   let workload = @manifest.load_workload(manifest_path)
 
-  let data = @dataset.uniform_f64_bytes(
+  let data = @dataset.generate(
+    workload.dataset.generator,
     workload.dataset.count,
     workload.dataset.seed,
-    workload.dataset.min_value,
-    workload.dataset.max_value,
-  )
+    workload.dataset.params,
+  ) catch {
+    @dataset.DatasetError::Message(message) => raise @host.error(message)
+  }
   let data_hash = @dataset.sha256_hex(data)
   let dataset_path = join(
     data_dir,
@@ -540,6 +561,8 @@ pub async fn run_workload(
     workload.dataset.count.to_string() +
     "-" +
     workload.dataset.seed.to_string() +
+    "-" +
+    @dataset.params_digest(workload.dataset.params) +
     ".bin",
   )
   let dataset_exists = @fs.exists(dataset_path) catch { _ => false }
@@ -879,10 +902,7 @@ pub async fn run_workload(
       generator: workload.dataset.generator,
       count: workload.dataset.count,
       seed: workload.dataset.seed,
-      params: Map([
-        ("min", Json::number(workload.dataset.min_value)),
-        ("max", Json::number(workload.dataset.max_value)),
-      ]),
+      params: dataset_params_json(workload.dataset.params),
       sha256: data_hash,
       bytes: data.length(),
     },

@@ -3,6 +3,7 @@ package "superbigcup325/moonperf/core/manifest"
 
 import {
   "moonbit-community/toml",
+  "superbigcup325/moonperf/core/dataset",
 }
 
 // Values
@@ -30,8 +31,7 @@ pub struct Dataset {
   generator : String
   count : Int32
   seed : Int64
-  min_value : Double
-  max_value : Double
+  params : Map[String, @dataset.ParamValue]
 }
 
 pub struct Implementation {

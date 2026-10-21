@@ -1,4 +1,5 @@
 import {
   "moonbitlang/async/fs",
   "moonbit-community/toml",
+  "superbigcup325/moonperf/core/dataset",
 }
