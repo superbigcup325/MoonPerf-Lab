@@ -106,3 +106,38 @@ GOLDEN_STRINGS = dict(
     count=100_000, seed=20261022, distinct=10_000,
     value_len_min=4, value_len_max=24, skew=3,
 )
+
+
+def nullable_column_bytes(
+    count: int, seed: int, value_min: int, value_max: int, null_percent: int
+) -> bytes:
+    """Integer column with a validity bitmap: values first, then the bitmap."""
+
+    if count < 1:
+        raise ValueError("count must be positive")
+    if seed < 0:
+        raise ValueError("seed must be non-negative")
+    if value_min < 0 or value_max < value_min:
+        raise ValueError("value range is invalid")
+    if not 0 <= null_percent <= 100:
+        raise ValueError("null_percent must be between 0 and 100")
+    span = value_max - value_min + 1
+    bitmap_bytes = (count + 7) // 8
+    out = bytearray(4 + count * 8 + bitmap_bytes)
+    struct.pack_into("<I", out, 0, count)
+    state = seed & MASK64
+    for row in range(count):
+        state = (state + GOLDEN) & MASK64
+        valid = mix64(state) % 100 >= null_percent
+        state = (state + GOLDEN) & MASK64
+        value = value_min + mix64(state) % span if valid else 0
+        struct.pack_into("<q", out, 4 + row * 8, value)
+        if valid:
+            out[4 + count * 8 + row // 8] |= 1 << (row % 8)
+    return bytes(out)
+
+
+SMALL_NULLABLE = dict(count=10, seed=1, value_min=0, value_max=9, null_percent=50)
+GOLDEN_NULLABLE = dict(
+    count=100_000, seed=20261023, value_min=0, value_max=1_000_000, null_percent=10
+)

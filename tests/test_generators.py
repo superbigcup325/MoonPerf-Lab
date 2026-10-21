@@ -26,6 +26,11 @@ STRINGS_SMALL_HEX = (
     "000000000000000000000000000000000000000002000000"
 )
 STRINGS_GOLDEN = "76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681"
+NULLABLE_SMALL_HEX = (
+    "0a000000090000000000000005000000000000000800000000000000000000000000000000000000000000"
+    "00000000000000000002000000000000000000000000000000010000000000000000000000000000004701"
+)
+NULLABLE_GOLDEN = "d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93"
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -150,3 +155,51 @@ class StringsTest(unittest.TestCase):
             reference_generators.strings_bytes(4, 1, 10, 8, 4, 1)
         with self.assertRaises(ValueError):
             reference_generators.strings_bytes(4, 1, 10, 4, 8, 0)
+
+def decode_nullable_column(payload: bytes) -> tuple[int, list[tuple[int, bool]]]:
+    """Split a nullable-column payload into (row_count, [(value, valid)])."""
+
+    (count,) = struct.unpack_from("<I", payload, 0)
+    bitmap_start = 4 + count * 8
+    rows = []
+    for row in range(count):
+        (value,) = struct.unpack_from("<q", payload, 4 + row * 8)
+        valid = bool(payload[bitmap_start + row // 8] >> (row % 8) & 1)
+        rows.append((value, valid))
+    return count, rows
+
+
+class NullableColumnTest(unittest.TestCase):
+    def test_small_layout_is_stable(self) -> None:
+        payload = reference_generators.nullable_column_bytes(
+            **reference_generators.SMALL_NULLABLE
+        )
+        self.assertEqual(payload.hex(), NULLABLE_SMALL_HEX)
+
+    def test_golden_hash_matches_the_core(self) -> None:
+        payload = reference_generators.nullable_column_bytes(
+            **reference_generators.GOLDEN_NULLABLE
+        )
+        self.assertEqual(len(payload), 812_504)
+        self.assertEqual(sha256_hex(payload), NULLABLE_GOLDEN)
+
+    def test_bitmap_and_padding_agree(self) -> None:
+        count, rows = decode_nullable_column(
+            reference_generators.nullable_column_bytes(1_000, 5, 0, 100, 25)
+        )
+        self.assertEqual(count, 1_000)
+        # 25 % nulls, so roughly three quarters of the bitmap is set; the
+        # generator defines the exact column, so assert the invariant instead
+        # of a fragile percentage.
+        valid = [row for row in rows if row[1]]
+        nulls = [row for row in rows if not row[1]]
+        self.assertTrue(valid and nulls)
+        self.assertTrue(all(0 <= value <= 100 for value, _ in rows))
+        self.assertTrue(all(value == 0 for value, _ in nulls))
+        self.assertAlmostEqual(len(valid) / count, 0.75, delta=0.05)
+
+    def test_invalid_parameters_are_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            reference_generators.nullable_column_bytes(4, 1, 10, 0, 10)
+        with self.assertRaises(ValueError):
+            reference_generators.nullable_column_bytes(4, 1, 0, 10, 101)
