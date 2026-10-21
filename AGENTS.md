@@ -80,10 +80,11 @@ moon test --target native
 moon fmt --check
 ```
 
-There is no accepted benchmark runner yet (P1). The MoonBit `run` command is
-the current candidate; the Python `mpf run` draft is only an oracle. Do not
-claim, quote or commit a performance result that was not produced by the
-accepted harness and recorded as a result artifact.
+The MoonBit `run` command produced the first `ok` artifact; the timeout/scaling
+and CI acceptance checks are still open, so it is not yet the accepted harness.
+The Python `mpf run` draft is only an oracle. Do not claim, quote or commit a
+performance result that was not produced by the accepted harness and recorded
+as a result artifact.
 
 ## Commits and red lines
 

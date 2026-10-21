@@ -3,8 +3,9 @@
 **Status:** P1.3 in progress. The MoonBit core owns the experiment loop:
 dataset, manifest, statistics, host primitive, correctness gate, runner,
 artifact and report. Clean builds, toolchain/build-log metadata, the shared
-`f64` load path and optimizer barriers are in; timeout-as-invalid-artifact,
-the K scaling diagnostic and a stable host remain.
+`f64` load path, optimizer barriers and a median-of-three setup baseline are
+in; the first `ok` artifact is committed under `results/numeric-scan/`.
+Timeout-as-invalid-artifact, the K scaling diagnostic and CI remain.
 
 ## Build and test
 

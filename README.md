@@ -162,11 +162,12 @@ added the first MoonBit core slices: a dataset generator, a manifest model,
 numeric-scan bytes and the golden SHA-256. The runner, artifact and report core are still Python, and no
 artifact of record exists yet.
 
-**No performance numbers are published yet, and there is no leaderboard.** The
-first complete experiment — `numeric-scan` in MoonBit and Rust on a recorded
-host — is P1. A valid result is a JSON artifact with raw samples, a correctness
-verdict, environment metadata and a reproduction command; no such artifact
-exists yet.
+**The first artifact of record exists, and there is no leaderboard.** The
+numeric-scan v4 experiment now has a schema-valid `ok` artifact under
+[`results/numeric-scan/`](results/numeric-scan/): raw samples, environment,
+correctness verdict, setup baseline and reproduction command. It is one
+workload on one host, not a language ranking. The remaining MVP acceptance
+work is the timeout/scaling checks and CI.
 
 What exists today:
 
@@ -177,11 +178,12 @@ What exists today:
 | [`workloads/numeric-scan/`](workloads/numeric-scan/) | First workload, specified; MoonBit and Rust implementations drafted |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
 | [`moonperf/`](moonperf/) | MoonBit core: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI |
-| [`tests/`](tests/) | 47 Python tests for the specification and runner fixtures |
+| [`tests/`](tests/) | 54 Python tests for the specification and runner fixtures |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases, status, gaps, risks and acceptance |
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
 | [`docs/mvp.md`](docs/mvp.md) | MVP scope, acceptance tests and out-of-scope list |
 | [`docs/implementation-boundaries.md`](docs/implementation-boundaries.md) | What belongs in MoonBit core, adapters, host scripts and dependencies |
+| [`results/numeric-scan/`](results/numeric-scan/) | First `ok` artifact and generated report |
 
 The Python runner draft is **not** an accepted part of the architecture. It is
 kept as an oracle for the MoonBit port. Do not add new experiment features to

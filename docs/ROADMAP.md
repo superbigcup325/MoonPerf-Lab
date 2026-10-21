@@ -31,7 +31,7 @@ gaps, risks, estimates and the first task.
 | Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
-| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; full MoonBit loop + P1.3 fairness/metadata; host stability and timeout/scaling remain | 4–5 weeks |
+| **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | In progress; first `ok` artifact committed; timeout/scaling/CI acceptance remain | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | Not started | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
@@ -62,7 +62,7 @@ dependency that has not been proven on this toolchain.
 | Measurement setup separation | Partial | `wall_ns // inner_repeats` includes startup/load | Add `--repeat 0` baseline and tune `K` |
 | Controlled measurement host | Partial | `K=50` on the `powersave` laptop: CV 2.07 % Rust, 2.36 % MoonBit; `ok` oracle artifact under `results/tmp/` | Still not a controlled profile; setup/clean/hoisting checks pending |
 | CI | Partial | Python spec tests only | No MoonBit/Rust build, no correctness fixtures |
-| Committed valid artifact | Not started | A dirty-tree `ok` oracle artifact exists under ignored `results/tmp/`; no committed artifact | Produce one accepted `ok` artifact after clean/setup checks |
+| Committed valid artifact | Implemented | `results/numeric-scan/20261021T044955Z-13f88214f2a1.json`; `verdict=ok`, dirty=false, CV 1.57 %/1.07 %, setup 3.2 %/1.5 % | Use it as the first artifact of record; acceptance tests still open |
 | Reproducibility docs | Partial | README quick start; protocol §10 | Update after the MoonBit CLI exists |
 | Hackathon evidence | Partial | One commit + uncommitted P1 work | Incremental commits, runnable demo, MoonBit-first proof |
 
@@ -300,9 +300,10 @@ the kernel; MoonBit checks `length % 8 == 0`; both use an optimizer barrier
 and records toolchain and build-log SHA-256 in the artifact. The setup baseline
 is the median of three runs and is recorded with its run count.
 
-**P1.3-B (next):** timeout-as-invalid-artifact, the `K = 1` vs `K = 10`
-scaling diagnostic, a stable host, the full A1–A17 acceptance suite and a
-committed `ok` artifact.
+**P1.3-B (in progress):** the first `ok` artifact is committed from a
+stable-load run (`K=100`, repeats=20, setup median of three). Still open:
+timeout-as-invalid-artifact, the `K = 1` vs `K = 10` scaling diagnostic, the
+full A1–A17 acceptance suite and CI.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.
