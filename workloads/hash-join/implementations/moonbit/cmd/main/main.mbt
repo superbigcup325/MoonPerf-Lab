@@ -10,7 +10,7 @@
 const GAMMA : UInt64 = 0x9E3779B97F4A7C15UL
 
 ///|
-const EMPTY : Int = -1
+const EMPTY : Int32 = -1
 
 ///|
 fn option(args : Array[String], name : String) -> String {
@@ -28,20 +28,24 @@ fn option(args : Array[String], name : String) -> String {
 /// The table index: the top 32 bits of the multiply-shift product, masked to
 /// the table size. The mask form keeps every implementation on the same table
 /// shape.
-fn slot_of(key : UInt64, mask : Int) -> Int {
+fn slot_of(key : UInt64, mask : Int32) -> Int32 {
   ((key * GAMMA) >> 32).to_int() & mask
 }
 
 ///|
 /// One join pass: build the table, probe it, return (pairs, checksum).
-fn join(data : Array[UInt64], rows : Int, build_rows : Int) -> (UInt64, UInt64) {
+fn join(
+  data : Array[UInt64],
+  rows : Int32,
+  build_rows : Int32,
+) -> (UInt64, UInt64) {
   let mut table_size = 16
   while table_size < build_rows * 2 {
     table_size = table_size * 2
   }
   let mask = table_size - 1
-  let heads : Array[Int] = Array::make(table_size, EMPTY)
-  let next : Array[Int] = Array::make(build_rows, EMPTY)
+  let heads : Array[Int32] = Array::make(table_size, EMPTY)
+  let next : Array[Int32] = Array::make(build_rows, EMPTY)
   let mut row = 0
   while row < build_rows {
     let slot = slot_of(data[row * 2], mask)
@@ -76,7 +80,7 @@ fn hex16(value : UInt64) -> String {
   let mut out = ""
   let mut index = 0
   while index < 16 {
-    let shift : Int = (15 - index) * 4
+    let shift : Int32 = (15 - index) * 4
     let nibble = ((value >> shift) & 0xFUL).to_int()
     out = out + digits[nibble:nibble + 1].to_owned()
     index = index + 1

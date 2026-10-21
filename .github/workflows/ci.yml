@@ -123,9 +123,12 @@ jobs:
       - name: Update the registry
         working-directory: moonperf
         run: moon update
-      - name: Build the MoonBit implementation
+      - name: Check and build the MoonBit implementation
         working-directory: workloads/hash-join/implementations/moonbit
-        run: ./build.sh
+        run: |
+          moon check --deny-warn --target native
+          moon fmt --check
+          ./build.sh
       - name: Build the Rust and C implementations
         working-directory: workloads/hash-join/implementations
         run: |
