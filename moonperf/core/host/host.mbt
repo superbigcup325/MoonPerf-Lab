@@ -69,6 +69,33 @@ async fn process_group(pid : Int32) -> Int32? {
 }
 
 ///|
+async fn children_of(pid : Int32) -> Array[Int32] {
+  let path = "/proc/" +
+    pid.to_string() +
+    "/task/" +
+    pid.to_string() +
+    "/children"
+  let result : Array[Int32] = []
+  let text = @fs.read_file(path).text() catch { _ => return result }
+  for token in text.split(" ") {
+    let value = token.trim()
+    if value.length() > 0 {
+      let child = @string.parse_int(value) catch { _ => continue }
+      result.push(child)
+    }
+  }
+  result
+}
+
+///|
+async fn kill_tree(pid : Int32) -> Unit {
+  for child in children_of(pid) {
+    kill_tree(child)
+  }
+  let _ = @process.run("kill", ["-KILL", pid.to_string()]) catch { _ => 0 }
+}
+
+///|
 /// Run one child in a new session/process group, with a hard timeout.
 ///
 /// On Linux the child is started through `setsid -w`; a timeout kills the
@@ -119,8 +146,11 @@ pub async fn run(
     Some(exit_code) =>
       { exit_code, timed_out: false, wall_us, stdout_path, stderr_path, }
     None => {
-      // setsid forks the session leader on Linux. Kill that group, not only
-      // the setsid wrapper, and then release the wrapper itself.
+      // setsid forks the session leader on Linux. Kill the descendant tree
+      // first, then the session/process group, then the wrapper itself.
+      kill_tree(pid) catch {
+        _ => ()
+      }
       let child = first_child(pid) catch { _ => None }
       let group_pid = match child {
         Some(child) => {
