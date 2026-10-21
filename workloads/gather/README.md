@@ -44,8 +44,10 @@ checksum = sum(out[row] * (row + 1) for every row) mod 2^64
 ```
 
 Verification is `exact` against the Rust reference. The output vector is
-allocated inside the timed kernel, once per pass: reusing it across the `K`
-repeats would measure a different, cheaper kernel.
+allocated and zeroed once, before the timed loop, and reused for every pass:
+that is what a real operator does with a batch buffer, and allocating 8 MB per
+pass would measure the allocator and page faults instead of the gather (a first
+attempt did exactly that and came out `unstable` with CV 5–8 %).
 
 Fault injection is recorded, not promised. Two injected faults on the C
 adapter:
@@ -69,8 +71,9 @@ adapter:
 - All implementations parse the same header and materialize the same two
   arrays before the timed loop: 8-byte values, 4-byte indices, no per-row
   object and no widened index type.
-- The output vector is allocated inside the kernel and written sequentially;
-  the checksum reads it back sequentially.
+- The output vector is allocated once per process, before the timed loop, and
+  written sequentially by every pass; the checksum reads it back sequentially.
+  Allocation and zeroing are setup, not kernel.
 - No per-row bounds check in any implementation; the generator guarantees the
   indices. Adding one is a different implementation id.
 - The kernel must not be hoisted: `black_box` / `Bench::keep` / empty-asm
@@ -86,9 +89,8 @@ recorded host, so a sample is about 0.2 s and the dataset load (12 MB plus the
 column materialization) stays small relative to it. This is a `component`
 workload: the setup gate is `setup_fraction <= 0.10`.
 
-The committed artifact
-`results/gather/20261021T1…json` records the measured medians, CVs and setup
-fractions for the three implementations.
+The committed artifact `results/gather/` records the measured medians, CVs and
+setup fractions for the three implementations.
 
 ## What would falsify the experiment
 

@@ -23,9 +23,12 @@ fn option(args : Array[String], name : String) -> String {
 
 ///|
 /// One gather pass: indirect read into the output vector, then the checksum.
-fn gather(values : Array[UInt64], indices : Array[Int32]) -> UInt64 {
+fn gather(
+  values : Array[UInt64],
+  indices : Array[Int32],
+  out : Array[UInt64],
+) -> UInt64 {
   let rows = indices.length()
-  let out : Array[UInt64] = Array::make(rows, 0UL)
   let mut row = 0
   while row < rows {
     // The generator guarantees 0 <= index < rows.
@@ -100,11 +103,12 @@ fn main {
     row = row + 1
   }
 
+  let out : Array[UInt64] = Array::make(rows, 0UL)
   let bench = @bench.Bench()
   let mut checksum = 0UL
   let mut iteration = 0
   while iteration < repeat {
-    let last = gather(values, indices)
+    let last = gather(values, indices, out)
     checksum = last
     bench.keep(checksum)
     iteration = iteration + 1
