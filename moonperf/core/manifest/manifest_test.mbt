@@ -189,3 +189,44 @@ test "strings rejects an inverted length range" {
   }
   inspect(failed, content="true")
 }
+
+///|
+test "nullable-columns manifest is parsed" {
+  let text = valid_manifest
+    .replace(
+      old="generator = \"uniform-f64\"",
+      new="generator = \"nullable-columns\"",
+    )
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="value_min = 0\nvalue_max = 100\nnull_percent = 10",
+    )
+  let workload = @manifest.parse_manifest_text("demo-scan", text) catch {
+    _ => abort("nullable-columns manifest was rejected")
+  }
+  inspect(workload.dataset.generator, content="nullable-columns")
+  inspect(
+    @dataset.param_int(workload.dataset.params, "null_percent").unwrap(),
+    content="10",
+  )
+}
+
+///|
+test "nullable-columns rejects null_percent above 100" {
+  let text = valid_manifest
+    .replace(
+      old="generator = \"uniform-f64\"",
+      new="generator = \"nullable-columns\"",
+    )
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="value_min = 0\nvalue_max = 100\nnull_percent = 101",
+    )
+  let failed = try {
+    ignore(@manifest.parse_manifest_text("demo-scan", text))
+    false
+  } catch {
+    @manifest.ManifestError::Message(_) => true
+  }
+  inspect(failed, content="true")
+}

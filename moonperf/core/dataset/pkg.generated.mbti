@@ -4,6 +4,8 @@ package "superbigcup325/moonperf/core/dataset"
 // Values
 pub fn generate(String, Int32, Int64, Map[String, ParamValue]) -> Bytes raise DatasetError
 
+pub fn nullable_column_bytes(Int32, Int64, Int64, Int64, Int32) -> Bytes
+
 pub fn param_float(Map[String, ParamValue], String) -> Double?
 
 pub fn param_int(Map[String, ParamValue], String) -> Int64?

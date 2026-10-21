@@ -80,3 +80,23 @@ test "strings golden hash" {
     content="76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681",
   )
 }
+
+///|
+test "nullable-column small deterministic bytes" {
+  let data = @dataset.nullable_column_bytes(10, 1L, 0L, 9L, 50)
+  inspect(
+    @crypto.bytes_to_hex_string(data),
+    content="0a00000009000000000000000500000000000000080000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000010000000000000000000000000000004701",
+  )
+}
+
+///|
+test "nullable-column golden hash" {
+  let data = @dataset.nullable_column_bytes(
+    100_000, 20261023L, 0L, 1_000_000L, 10,
+  )
+  inspect(
+    @dataset.sha256_hex(data),
+    content="d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93",
+  )
+}

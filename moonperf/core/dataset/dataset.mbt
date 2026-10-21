@@ -55,6 +55,15 @@ fn push_u32_le(out : Array[Byte], value : Int32) -> Unit {
 }
 
 ///|
+/// Write one little-endian `u32` into a fixed-size buffer at `offset`.
+fn put_u32_le(out : FixedArray[Byte], offset : Int32, value : Int32) -> Unit {
+  out[offset] = (value & 0xFF).to_byte()
+  out[offset + 1] = ((value >> 8) & 0xFF).to_byte()
+  out[offset + 2] = ((value >> 16) & 0xFF).to_byte()
+  out[offset + 3] = ((value >> 24) & 0xFF).to_byte()
+}
+
+///|
 /// The uniform-f64 generator, exactly as specified by the experiment protocol.
 ///
 /// SplitMix64 advances one state per element; the top 53 bits become a uniform
@@ -180,6 +189,57 @@ pub fn strings_bytes(
 }
 
 ///|
+/// The nullable-column generator: an integer column plus a validity bitmap.
+///
+/// Layout, little-endian: `u32 row_count`, then `row_count` × `i64` value,
+/// then `ceil(row_count / 8)` bitmap bytes. Bit `2^r` of bitmap byte `r / 8`
+/// is set when row `r` is valid; a null row carries the value `0` in the value
+/// slot, so a reader that ignores the bitmap gets a different answer and fails
+/// its checksum instead of silently aggregating zeros.
+///
+/// Each row draws once for validity and once for the value:
+/// `valid = draw mod 100 >= null_percent`, `value = value_min + draw mod span`.
+pub fn nullable_column_bytes(
+  count : Int32,
+  seed : Int64,
+  value_min : Int64,
+  value_max : Int64,
+  null_percent : Int32,
+) -> Bytes {
+  guard! count > 0
+  guard! seed >= 0L
+  guard! value_min >= 0L
+  guard! value_max >= value_min
+  guard! null_percent >= 0 && null_percent <= 100
+  let span = (value_max - value_min).reinterpret_as_uint64() + 1UL
+  let values_start = 4
+  let bitmap_start = values_start + count * 8
+  let bitmap_bytes = (count + 7) / 8
+  let out : FixedArray[Byte] = FixedArray::make(
+    bitmap_start + bitmap_bytes,
+    b'\x00',
+  )
+  put_u32_le(out, 0, count)
+  let rng = SplitMix64::new(seed)
+  for row in 0..<count {
+    let validity_draw = rng.next()
+    let value_draw = rng.next()
+    let valid = (validity_draw % 100UL).to_int() >= null_percent
+    if valid {
+      let value = value_min.reinterpret_as_uint64() + value_draw % span
+      let bytes = value.to_le_bytes()
+      for offset in 0..<8 {
+        out[values_start + row * 8 + offset] = bytes.unsafe_get(offset)
+      }
+      let bit_index = bitmap_start + row / 8
+      let bit = (1 << (row % 8)).to_byte()
+      out[bit_index] = out[bit_index] | bit
+    }
+  }
+  Bytes::from_array(out)
+}
+
+///|
 fn required(
   params : Map[String, ParamValue],
   key : String,
@@ -245,6 +305,20 @@ pub fn validate(
         fail("dataset.params.payload_max must be at least payload_min")
       }
     }
+    "nullable-columns" => {
+      let value_min = int_param(params, "value_min", generator)
+      let value_max = int_param(params, "value_max", generator)
+      guard value_min >= 0L else {
+        fail("dataset.params.value_min must be non-negative")
+      }
+      guard value_max >= value_min else {
+        fail("dataset.params.value_max must be at least value_min")
+      }
+      let null_percent = int_param(params, "null_percent", generator)
+      guard null_percent >= 0L && null_percent <= 100L else {
+        fail("dataset.params.null_percent must be between 0 and 100")
+      }
+    }
     "strings" => {
       let distinct = int_param(params, "distinct", generator)
       guard distinct >= 1L && distinct <= 1_000_000L else {
@@ -293,6 +367,14 @@ pub fn generate(
         int_param(params, "key_bits", generator),
         int_param(params, "payload_min", generator),
         int_param(params, "payload_max", generator),
+      )
+    "nullable-columns" =>
+      nullable_column_bytes(
+        count,
+        seed,
+        int_param(params, "value_min", generator),
+        int_param(params, "value_max", generator),
+        int_param(params, "null_percent", generator).to_int(),
       )
     "strings" =>
       strings_bytes(
