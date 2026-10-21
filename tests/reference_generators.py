@@ -184,3 +184,33 @@ SMALL_COLUMNAR = dict(
 GOLDEN_COLUMNAR = dict(
     count=1_000_000, seed=20261025, value_min=0, value_max=1_000_000, locality=16
 )
+
+
+def csv_records_bytes(
+    count: int, seed: int, categories: int, amount_max: int
+) -> bytes:
+    """Deterministic text table: header plus id,category,amount rows."""
+
+    if count < 1:
+        raise ValueError("count must be positive")
+    if seed < 0:
+        raise ValueError("seed must be non-negative")
+    if not 1 <= categories <= 4096:
+        raise ValueError("categories must be between 1 and 4096")
+    if amount_max < 1:
+        raise ValueError("amount_max must be positive")
+    out = bytearray(b"id,category,amount\n")
+    state = seed & MASK64
+    category_span = categories
+    amount_span = amount_max + 1
+    for row in range(count):
+        state = (state + GOLDEN) & MASK64
+        category = mix64(state) % category_span
+        state = (state + GOLDEN) & MASK64
+        amount = mix64(state) % amount_span
+        out += f"{row},{category},{amount}\n".encode("ascii")
+    return bytes(out)
+
+
+SMALL_CSV = dict(count=5, seed=1, categories=4, amount_max=99)
+GOLDEN_CSV = dict(count=100_000, seed=20261026, categories=16, amount_max=1_000_000)

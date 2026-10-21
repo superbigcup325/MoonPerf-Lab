@@ -4,6 +4,8 @@ package "superbigcup325/moonperf/core/dataset"
 // Values
 pub fn columnar_gather_bytes(Int32, Int64, Int64, Int64, Int32) -> Bytes
 
+pub fn csv_records_bytes(Int32, Int64, Int32, Int64) -> Bytes
+
 pub fn generate(String, Int32, Int64, Map[String, ParamValue]) -> Bytes raise DatasetError
 
 pub fn nullable_column_bytes(Int32, Int64, Int64, Int64, Int32) -> Bytes

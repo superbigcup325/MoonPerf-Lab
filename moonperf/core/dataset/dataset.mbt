@@ -300,6 +300,43 @@ pub fn columnar_gather_bytes(
 }
 
 ///|
+/// The csv-records generator: a deterministic text table with a header.
+///
+/// Layout: `id,category,amount` followed by one LF-terminated row per record.
+/// `id` is the row index, `category` is uniform in `[0, categories)` and
+/// `amount` is uniform in `[0, amount_max]`. The file is plain ASCII so a
+/// hand-written parser and a SQL engine both read the same bytes.
+pub fn csv_records_bytes(
+  count : Int32,
+  seed : Int64,
+  categories : Int32,
+  amount_max : Int64,
+) -> Bytes {
+  guard! count > 0
+  guard! seed >= 0L
+  guard! categories >= 1
+  guard! amount_max >= 1L
+  let builder = StringBuilder()
+  builder.write_string("id,category,amount\n")
+  let rng = SplitMix64::new(seed)
+  let category_span = categories.to_int64().reinterpret_as_uint64()
+  let amount_span = amount_max.reinterpret_as_uint64() + 1UL
+  let mut row = 0
+  while row < count {
+    let category = (rng.next() % category_span).to_int()
+    let amount = (rng.next() % amount_span).reinterpret_as_int64()
+    builder.write_string(row.to_string())
+    builder.write_string(",")
+    builder.write_string(category.to_string())
+    builder.write_string(",")
+    builder.write_string(amount.to_string())
+    builder.write_string("\n")
+    row = row + 1
+  }
+  @utf8.encode(builder.to_string())
+}
+
+///|
 fn required(
   params : Map[String, ParamValue],
   key : String,
@@ -363,6 +400,16 @@ pub fn validate(
       }
       guard payload_max >= payload_min else {
         fail("dataset.params.payload_max must be at least payload_min")
+      }
+    }
+    "csv-records" => {
+      let categories = int_param(params, "categories", generator)
+      guard categories >= 1L && categories <= 4096L else {
+        fail("dataset.params.categories must be between 1 and 4096")
+      }
+      let amount_max = int_param(params, "amount_max", generator)
+      guard amount_max >= 1L else {
+        fail("dataset.params.amount_max must be positive")
       }
     }
     "columnar-gather" => {
@@ -441,6 +488,13 @@ pub fn generate(
         int_param(params, "key_bits", generator),
         int_param(params, "payload_min", generator),
         int_param(params, "payload_max", generator),
+      )
+    "csv-records" =>
+      csv_records_bytes(
+        count,
+        seed,
+        int_param(params, "categories", generator).to_int(),
+        int_param(params, "amount_max", generator),
       )
     "columnar-gather" =>
       columnar_gather_bytes(

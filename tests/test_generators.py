@@ -38,6 +38,8 @@ COLUMNAR_SMALL_HEX = (
     "0000020000000200000003000000"
 )
 COLUMNAR_GOLDEN = "e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79"
+CSV_SMALL = "id,category,amount\n0,1,19\n1,2,35\n2,1,48\n3,1,33\n4,0,50\n"
+CSV_GOLDEN = "d9bad5505aec0b089a00aebd2a7591a7ae2654f9270949917b30f1950d8afeb3"
 
 
 def sha256_hex(payload: bytes) -> str:
@@ -261,3 +263,36 @@ class ColumnarGatherTest(unittest.TestCase):
             reference_generators.columnar_gather_bytes(4, 1, 10, 0, 1)
         with self.assertRaises(ValueError):
             reference_generators.columnar_gather_bytes(4, 1, 0, 10, 0)
+
+class CsvRecordsTest(unittest.TestCase):
+    def test_small_text_is_stable(self) -> None:
+        payload = reference_generators.csv_records_bytes(
+            **reference_generators.SMALL_CSV
+        )
+        self.assertEqual(payload.decode("ascii"), CSV_SMALL)
+
+    def test_golden_hash_matches_the_core(self) -> None:
+        payload = reference_generators.csv_records_bytes(
+            **reference_generators.GOLDEN_CSV
+        )
+        self.assertEqual(len(payload), 1_515_076)
+        self.assertEqual(sha256_hex(payload), CSV_GOLDEN)
+
+    def test_every_row_has_three_integer_fields(self) -> None:
+        payload = reference_generators.csv_records_bytes(
+            500, 3, categories=8, amount_max=1000
+        ).decode("ascii")
+        lines = payload.splitlines()
+        self.assertEqual(lines[0], "id,category,amount")
+        for row, line in enumerate(lines[1:]):
+            fields = line.split(",")
+            self.assertEqual(len(fields), 3)
+            self.assertEqual(int(fields[0]), row)
+            self.assertTrue(0 <= int(fields[1]) < 8)
+            self.assertTrue(0 <= int(fields[2]) <= 1000)
+
+    def test_invalid_parameters_are_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            reference_generators.csv_records_bytes(4, 1, 0, 10)
+        with self.assertRaises(ValueError):
+            reference_generators.csv_records_bytes(4, 1, 4, 0)

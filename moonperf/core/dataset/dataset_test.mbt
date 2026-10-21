@@ -120,3 +120,21 @@ test "columnar-gather golden hash" {
     content="e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79",
   )
 }
+
+///|
+test "csv-records small deterministic bytes" {
+  let data = @dataset.csv_records_bytes(5, 1L, 4, 99L)
+  inspect(
+    @utf8.decode(data),
+    content="id,category,amount\n0,1,19\n1,2,35\n2,1,48\n3,1,33\n4,0,50\n",
+  )
+}
+
+///|
+test "csv-records golden hash" {
+  let data = @dataset.csv_records_bytes(100_000, 20261026L, 16, 1_000_000L)
+  inspect(
+    @dataset.sha256_hex(data),
+    content="d9bad5505aec0b089a00aebd2a7591a7ae2654f9270949917b30f1950d8afeb3",
+  )
+}

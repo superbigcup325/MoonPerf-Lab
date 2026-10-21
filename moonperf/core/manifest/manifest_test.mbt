@@ -251,3 +251,24 @@ test "columnar-gather manifest is parsed" {
     content="16",
   )
 }
+
+///|
+test "csv-records manifest is parsed" {
+  let text = valid_manifest
+    .replace(
+      old="generator = \"uniform-f64\"",
+      new="generator = \"csv-records\"",
+    )
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="categories = 16\namount_max = 1000000",
+    )
+  let workload = @manifest.parse_manifest_text("demo-scan", text) catch {
+    _ => abort("csv-records manifest was rejected")
+  }
+  inspect(workload.dataset.generator, content="csv-records")
+  inspect(
+    @dataset.param_int(workload.dataset.params, "categories").unwrap(),
+    content="16",
+  )
+}

@@ -122,6 +122,7 @@ Built-in generators (version 1):
 | `strings` | dictionary-encoded column | `distinct` (1–1 000 000), `value_len_min`, `value_len_max` (1–255), `skew` (1–8) | `u32` dictionary size; per entry `u32` byte length plus ASCII bytes; then `count` × `u32` index |
 | `nullable-columns` | nullable integer column | `value_min`, `value_max` (integers, ≥ 0), `null_percent` (0–100) | `u32` row count; `count` × `i64` value; `ceil(count/8)` validity bytes |
 | `columnar-gather` | value column plus an index vector | `value_min`, `value_max` (integers, ≥ 0), `locality` (1–4096) | `u32` row count; `count` × `i64` value; `count` × `u32` index |
+| `csv-records` | text table | `categories` (1–4096), `amount_max` (integer ≥ 1) | `id,category,amount` header, then one LF-terminated row per record |
 
 `uniform-f64` is defined precisely so that a second implementation of the
 harness can reproduce the bytes. With 64-bit unsigned wraparound arithmetic:
@@ -234,6 +235,24 @@ for run_start in 0, locality, 2*locality, ...:
 
 Constraints: `0 <= value_min <= value_max`, `1 <= locality <= 4096`.
 
+`csv-records` is a plain ASCII table for the end-to-end tier: a hand-written
+parser and a SQL engine must read the same bytes. `id` is the row index,
+`category` is uniform in `[0, categories)` and `amount` is uniform in
+`[0, amount_max]`; all three are decimal integers with no padding or spaces,
+and the file ends with a newline.
+
+```
+write_string("id,category,amount\n")
+for row in 0..count:
+    state += 0x9E3779B97F4A7C15
+    category = mix(state) mod categories
+    state += 0x9E3779B97F4A7C15
+    amount = mix(state) mod (amount_max + 1)
+    write_string(row + "," + category + "," + amount + "\n")
+```
+
+Constraints: `1 <= categories <= 4096`, `amount_max >= 1`.
+
 Golden fixtures, asserted by both the MoonBit core test suite and the Python
 reference in `tests/`:
 
@@ -244,6 +263,7 @@ reference in `tests/`:
 | `strings` | count 100 000, seed 20261022, distinct 10 000, lengths 4–24, skew 3 | `76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681` |
 | `nullable-columns` | count 100 000, seed 20261023, values 0–1 000 000, 10 % null | `d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93` |
 | `columnar-gather` | count 1 000 000, seed 20261025, values 0–1 000 000, locality 16 | `e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79` |
+| `csv-records` | count 100 000, seed 20261026, categories 16, amount 0–1 000 000 | `d9bad5505aec0b089a00aebd2a7591a7ae2654f9270949917b30f1950d8afeb3` |
 
 Rules:
 
