@@ -72,6 +72,9 @@ reporting once it can be reproduced.
 - A non-MoonBit component must justify itself by a missing OS primitive, a
   workload subject, a build tool or the temporary oracle. Its interface and
   limits are in [`docs/implementation-boundaries.md`](docs/implementation-boundaries.md).
+- CI, mooncakes publication, commit counts and line counts are quality signals,
+  not goals and not acceptance criteria. A result is admissible because of the
+  protocol and the artifact, not because of the process around it.
 
 ## What it is not
 
@@ -128,24 +131,6 @@ evidence.
   already exist. Add a MoonBit dependency only with a concrete need.
 - **Small and honest beats broad and noisy.** One workload measured properly is
   worth more than ten measured carelessly.
-
-## Hackathon context
-
-This repository is developed for the MoonBit hackathon. The verified rule
-snapshot available here is the **2026-09 official material** (archived
-2026-09-04; deadline extension to 2026-09-30 communicated on 2026-09-22). The
-formal charter is behind a login wall; the official site says the formal
-charter and official notices prevail.
-
-The rule that shapes this repository is: **MoonBit is the primary
-implementation language.** It is a qualitative requirement, not a line-count
-ratio. The project answers it with a MoonBit framework core and a capability
-ownership matrix, not padding.
-
-The 2026-09 material does **not** list CI, mooncakes publication, a minimum
-commit count or a 4k–10k line target as acceptance gates. They are quality
-signals. For a later monthly round, re-verify the current charter and deadline
-in the event group; this repository does not assume an October rule set.
 
 ## Status
 

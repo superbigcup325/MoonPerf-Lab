@@ -32,7 +32,7 @@ reproducible experiment is a workload, not an MVP.
 | Report | Generated Markdown, never hand-edited | Keep; portable to MoonBit |
 | Reproduction | Clean-environment path; same-host medians within ±5 % | Document and test |
 | CI | `moon check`/`moon test`, Rust build, Python schema cross-check; correctness only | Add after the core exists |
-| Commit hygiene | Incremental, traceable commits | Required for the hackathon |
+| Commit hygiene | Incremental, traceable commits | A reviewer must be able to audit where a number came from |
 
 ## Scope ladder
 

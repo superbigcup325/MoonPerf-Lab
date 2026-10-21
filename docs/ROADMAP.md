@@ -65,7 +65,7 @@ dependency that has not been proven on this toolchain.
 | Committed valid artifacts | Implemented | Three `ok` artifacts under `results/numeric-scan/`; the latest (`20261021T055715Z-a47130edbf4b`) has three implementations | One artifact per new workload still missing |
 | Dataset generators | Partial | `uniform-f64` only: `core/dataset` plus a golden SHA in `moon test` | Structured/string/nullable generators are P2.1 |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
-| Hackathon evidence | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
+| Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
 
 ### What the audit found
 
@@ -140,8 +140,8 @@ exist; the missing piece was an honest audit and a verified MoonBit capability
 matrix.
 
 **Goal:** establish what is true before adding code: the repository state, the
-MoonBit capabilities that actually exist, the hackathon rules that actually
-apply, and the contract that makes a result admissible.
+MoonBit capabilities that actually exist, the project's own constraints, and
+the contract that makes a result admissible.
 
 **Tasks:**
 
@@ -151,9 +151,9 @@ apply, and the contract that makes a result admissible.
   spawn, timeout, process-group kill, monotonic clock, JSON, TOML,
   concurrency, cross-platform support. Record the probe command, toolchain and
   result; do not infer APIs from the language.
-- Verify the hackathon requirements from the official material. Separate hard
-  gates from quality signals. Do not invent a line-count ratio, CI requirement
-  or mooncakes requirement.
+- Write down the project's own constraints — MoonBit-first, auditable history,
+  runnable examples, no invented gates — and keep them separate from quality
+  signals such as CI or a line-count target.
 - Decide the architecture: MoonBit core, Python oracle, Rust reference, C in
   P2, Linux native MVP.
 - Define the MVP and its acceptance tests.
@@ -430,8 +430,7 @@ code compiles" is not an exit.
 
 **Estimate:** 4–5 weeks total (sum of P1.0–P1.4), assuming a controlled host and
 familiarity with MoonBit. Part-time or first-time MoonBit work should plan
-6–8 weeks. If the hackathon deadline is earlier, the deliverable is P1.0–P1.3;
-P1.4 can follow.
+6–8 weeks. If time is short, deliver P1.0–P1.3 first; P1.4 can follow.
 
 ## P2 · Representative compute and data-processing workloads
 
@@ -685,7 +684,7 @@ least one external consumer.
 | Scratch artifact | `results/tmp-smoke/` (removed) | No scratch artifact under `results/` | Invalid evidence could enter the results path | Use `results/tmp/`; `results/tmp-*` ignored |
 | Docs | README/AGENTS/workloads/results | Current and target separated | Contributors misled | This revision |
 | CI | Python only | MoonBit/Rust/correctness | Regressions unseen | Add after core |
-| Commits | One commit + uncommitted P1 | Incremental traceable | Hackathon criterion at risk | Commit P1 in slices |
+| Commits | One commit plus uncommitted P1 work | Incremental traceable | History hard to audit or reproduce | Commit P1 in slices |
 
 ## Risk register and verification plan
 
@@ -699,58 +698,46 @@ least one external consumer.
 | Semantic drift across languages | Rust `Vec<f64>` vs MoonBit byte scan | High / medium | Same setup representation; shared fixtures; review | Fault injection + byte-identical dataset + output types | P1 |
 | Optimizer eliminates the repeated kernel | Unverified `for 0..K` loop with pure `scan` | High / medium | Compiler barrier (`Bench::keep`, `black_box`, volatile sink) | `K=10` vs `K=20` slope test; inspect generated code | P1 |
 | Scope creep | Dashboard/DB/auto-diagnosis are attractive | Medium / high | Explicit out-of-scope table; MVP exit gate | PR checklist | P1–P4 |
-| Hackathon rules change | 2026-09 snapshot; later monthly round may differ | Medium / medium | Cite verified source; re-check the official charter; no invented gates | Read the current charter before submission | P0/P1 |
 | Reproducibility depends on network | `moon`/`cargo` registry; toolchains | Medium / medium | Pin versions; record; optional vendor/cache; clean-env test | Fresh clone test with recorded steps | P1 |
 | macOS/Windows diverge | `setsid` Linux-only; async supports Linux/macOS | Medium / low | Linux MVP; document unsupported targets | Platform matrix; no claims for untested targets | P1/P2 |
 | Dataset parity | Golden SHA and `cmp` passed on 2026-10-20 | Low | Keep the golden test; re-run if the generator or dependency changes | `moon test`; `cmp` | P1 |
 | Invalid artifact reaches results | A scratch artifact was found under `results/` (removed) | Was present / medium | Keep scratch under `results/tmp/`; `results/tmp-*` ignored; validation in CI | Clean tree; CI check | P0 |
 
-## Hackathon rule basis
+## Project principles
 
-The project is developed for the MoonBit hackathon. The verified rule snapshot
-available to this repository is the **2026-09 official material** (archived
-2026-09-04, with the deadline extension to 2026-09-30 communicated on
-2026-09-22). The formal charter is behind a login wall; the official site says
-the formal charter and official notices prevail.
+The commitments that shape this repository, and where each one is enforced:
 
-Requirements relevant to this repository, as stated in that material:
+1. **MoonBit-first core.** The framework is MoonBit; the programs under test
+   may be any language. It is the one rule that shapes the architecture. It is
+   qualitative, not a line-count ratio: the answer is a MoonBit core with a
+   capability ownership matrix, not padding.
+2. **Public repository with an auditable history.** Commit in slices, each one
+   explaining its change. A single giant drop is not a development record.
+3. **Runnable and reviewable:** a clear README, a runnable example, and tests
+   that fail when the code is wrong.
+4. **Work that matches the plan.** Scope is argued in this roadmap and in the
+   protocol, not added silently.
+5. **Open-source compliance:** an OSI-approved license (MIT here), with ported
+   or referenced sources attributed.
+6. **Explainable research:** the author can explain the goal, the path and the
+   quality bar. The architecture, MVP, boundaries and ADRs are that
+   explanation.
 
-1. **MoonBit is the primary implementation language.** This is the only rule
-   that changes the architecture. It is a qualitative requirement, not a
-   line-count ratio. The correct response is a MoonBit core with a capability
-   ownership matrix, not padding.
-2. **Public repository with continuous, traceable commits.** Commit the work in
-   slices. One giant drop and a single commit are weak evidence.
-3. **Runnable project:** clear README, runnable example, necessary tests.
-4. **Effective work:** the submission matches its one-page plan; existing
-   projects count only the new work.
-5. **Open-source compliance:** an OSI-approved license (MIT here), with
-   ported or referenced sources attributed.
-6. **AI explainability:** the author can explain the goal, path and quality.
+CI, mooncakes publication, a minimum commit count and a line-count target are
+**neither goals nor acceptance criteria**; they are quality signals at most.
+The evidence that the project is MoonBit-first is framework ownership and the
+tests, not a number of lines.
 
-Explicitly **not** listed as 2026-09 gates: CI configuration, publishing to
-mooncakes, a minimum commit count, or a 4k–10k line target. Treat them as
-quality signals, not acceptance criteria. Do not invent a line-count target to
-satisfy "MoonBit-first"; the framework ownership and the tests are the evidence.
+### Principle-to-evidence mapping
 
-For a later monthly round, re-verify the current charter and deadlines in the
-event group before submission. This roadmap does not assume an October rule
-set.
-
-### Acceptance mapping
-
-| Criterion (2026-09 wording) | Repository evidence | Phase |
+| Principle | Repository evidence | Phase |
 | --- | --- | --- |
-| MoonBit is the primary implementation language | MoonBit framework core; capability ownership matrix; `moon test`; CLI built by MoonBit | P1 |
-| Public repository with continuous, traceable commits | Incremental P1 commits; no giant drop | P1 |
-| Runnable: clear README, runnable example, tests | Quick start; `mpf run workloads/numeric-scan`; MoonBit + Python tests; demo artifact | P1 |
-| Effective work | One admissible artifact, fault injection, reproduction record; existing work counted separately | P1 |
+| MoonBit-first core | MoonBit framework core; capability ownership matrix; `moon test`; CLI built by MoonBit | P1 |
+| Auditable history | Incremental P1/P2 commits; no giant drop | P1–P2 |
+| Runnable and reviewable | Quick start; `moon run cli -- run workloads/numeric-scan`; MoonBit and Python tests; committed artifact | P1 |
+| Work matches the plan | One admissible artifact per active workload, fault injection, reproduction record | P1–P2 |
 | Open-source compliance | MIT; dependency licenses recorded; ported/referenced sources attributed | P0/P1 |
-| AI explainability | Architecture, MVP, boundaries, ADRs and risk register explain the goal, path and quality | P0 |
-
-Quality signals that are **not** gates: CI, mooncakes publication, a minimum
-commit count, a 4k–10k line target. They may still be useful; they do not decide
-acceptance.
+| Explainable research | Architecture, MVP, boundaries, ADRs and risk register explain the goal, path and quality | P0 |
 
 ## Estimates and assumptions
 
@@ -764,7 +751,7 @@ acceptance.
 
 The old roadmap's P1 estimate (1–2 weeks) assumed a Python runner. The MoonBit
 port, the host primitive, the fairness fixes and the acceptance suite are new
-work. If the hackathon deadline is earlier, deliver P1.0–P1.3 and defer P1.4.
+work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## Change control
 
@@ -798,7 +785,7 @@ section for its evidence.
 - **2026-10-20:** Re-audited the repository; added the MoonBit-first
   architecture, MVP specification and implementation boundaries; corrected the
   phase status, estimates and gaps; added the verified capability matrix, the
-  process-group finding and the hackathon rule basis.
+  process-group finding and the project principles.
 - **2026-10-20 (execution):** fixed the two blocking Python runner defects
   (absolute paths, reference-first) with regression tests; tuned numeric-scan
   to `K=50`; generalized the result harness/setup contract and added
@@ -819,7 +806,7 @@ section for its evidence.
 
 | File | Change | Reason |
 | --- | --- | --- |
-| `README.md` | Added MoonBit-first positioning, hackathon rule context, accurate P0/P1 status, target architecture and updated layout/quick start. | The old README described a Python-first pre-runner state and did not state the MoonBit core requirement. |
+| `README.md` | Added MoonBit-first positioning, the project principles, accurate P0/P1 status, target architecture and updated layout/quick start. | The old README described a Python-first pre-runner state and did not state the MoonBit core requirement. |
 | `docs/ROADMAP.md` | Rewrote phases P0–P4 with status, tasks, deliverables, acceptance, prerequisites, non-goals, exits and estimates; added audit, gaps, risks, rules basis, first task and this log. | The old plan assumed a Python runner and did not reflect the MoonBit port, the observed defects or the host/process-group risks. |
 | `docs/architecture.md` | New: MoonBit-first target architecture, module map, data flow, ownership matrix, verified capability probe, interfaces, measurement model, migration and ADRs. | The repository had no document connecting the positioning to a concrete MoonBit implementation. |
 | `docs/mvp.md` | New: MVP definition, scope ladder, functional requirements, numeric-scan spec, acceptance tests, host profile, reproduction path and out-of-scope list. | The old roadmap's MVP was a module list without testable criteria. |

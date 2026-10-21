@@ -306,7 +306,7 @@ oracle, not a runtime component.
 
 | ID | Decision | Rationale | Revisit when |
 | --- | --- | --- | --- |
-| ADR-001 | The framework core is MoonBit; Python is a temporary oracle. | Hackathon rule: MoonBit is the primary implementation language. The framework, not the subjects, must be MoonBit. | Never; this is the positioning. |
+| ADR-001 | The framework core is MoonBit; Python is a temporary oracle. | The positioning is MoonBit-first: the framework, not the subjects, must be MoonBit, so the lab itself stress-tests the ecosystem it measures. | Never; this is the positioning. |
 | ADR-002 | MVP reference language is Rust; C is P2. | The workload is already implemented and the protocol only requires one reference. C adds toolchain and fairness work without adding MVP evidence. | P2, when a C reference is useful for compiler comparison. |
 | ADR-003 | Numeric Scan is the first workload. | Smallest complete loop; deterministic dataset; exact/tolerant output; exposes compiler and memory-access differences. | Never for MVP; it is the calibration workload. |
 | ADR-004 | The harness owns wall-clock timing; adapters do not report time. | Removes an incentive and a contract burden; keeps one clock and one definition. | P3, if adapter-internal timing is needed for a specific question. |
