@@ -23,13 +23,35 @@ pub(all) enum ParamValue {
 }
 
 ///|
-/// The SplitMix64 output function. `uniform-f64` and `structured-records` share
-/// it so that one implementation of the mix is enough for both layouts.
-fn mix64(state : UInt64) -> UInt64 {
-  let mut z = state
+/// The SplitMix64 stream. Every generator draws from it, so the byte layouts
+/// share one definition of the state advance and the mix.
+priv struct SplitMix64 {
+  mut state : UInt64
+}
+
+///|
+fn SplitMix64::new(seed : Int64) -> SplitMix64 {
+  { state: seed.reinterpret_as_uint64(), }
+}
+
+///|
+/// One draw: advance the state by the golden gamma, then mix it. The mix is the
+/// same three-step function for every generator.
+fn SplitMix64::next(self : SplitMix64) -> UInt64 {
+  self.state = self.state + 0x9E3779B97F4A7C15UL
+  let mut z = self.state
   z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL
   z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL
   z ^ (z >> 31)
+}
+
+///|
+/// Append one little-endian `u32`. `value` is an `Int` below 2^32.
+fn push_u32_le(out : Array[Byte], value : Int32) -> Unit {
+  out.push((value & 0xFF).to_byte())
+  out.push(((value >> 8) & 0xFF).to_byte())
+  out.push(((value >> 16) & 0xFF).to_byte())
+  out.push(((value >> 24) & 0xFF).to_byte())
 }
 
 ///|
@@ -50,10 +72,9 @@ pub fn uniform_f64_bytes(
   let out : FixedArray[Byte] = FixedArray::make(count * 8, b'\x00')
   let span = max_value - min_value
   let scale = 1.0 / 9007199254740992.0 // 2^-53
-  let mut state : UInt64 = seed.reinterpret_as_uint64()
+  let rng = SplitMix64::new(seed)
   for index in 0..<count {
-    state = state + 0x9E3779B97F4A7C15UL
-    let z = mix64(state)
+    let z = rng.next()
     let unit = (z >> 11).to_double() * scale
     let value = min_value + span * unit
     let bytes = value.reinterpret_as_uint64().to_le_bytes()
@@ -85,12 +106,10 @@ pub fn structured_records_bytes(
   let span = (payload_max - payload_min).reinterpret_as_uint64() + 1UL
   let shift = (64L - key_bits).to_int()
   let out : FixedArray[Byte] = FixedArray::make(count * 16, b'\x00')
-  let mut state : UInt64 = seed.reinterpret_as_uint64()
+  let rng = SplitMix64::new(seed)
   for index in 0..<count {
-    state = state + 0x9E3779B97F4A7C15UL
-    let key_z = mix64(state)
-    state = state + 0x9E3779B97F4A7C15UL
-    let payload_z = mix64(state)
+    let key_z = rng.next()
+    let payload_z = rng.next()
     let key = if key_bits == 64L { key_z } else { key_z >> shift }
     let payload = payload_min.reinterpret_as_uint64() + payload_z % span
     let key_bytes = key.to_le_bytes()
@@ -101,6 +120,61 @@ pub fn structured_records_bytes(
     for offset in 0..<8 {
       out[index * 16 + 8 + offset] = payload_bytes.unsafe_get(offset)
     }
+  }
+  Bytes::from_array(out)
+}
+
+///|
+/// The strings generator: a dictionary-encoded string column.
+///
+/// Layout, little-endian, no padding: `u32 dictionary_size`, then for each
+/// entry a `u32` byte length and that many ASCII bytes in `a..z`, then `count`
+/// `u32` indices into the dictionary.
+///
+/// Each dictionary entry draws its length, then one draw per byte. Each row
+/// draws `skew` values and keeps the smallest, then scales it to the
+/// dictionary: `index = ((z >> 32) * distinct) >> 32`. A larger `skew` puts
+/// more rows on the low indices, which is the skewed distribution the join and
+/// gather workloads need; `skew = 1` is uniform.
+pub fn strings_bytes(
+  count : Int32,
+  seed : Int64,
+  distinct : Int32,
+  value_len_min : Int32,
+  value_len_max : Int32,
+  skew : Int32,
+) -> Bytes {
+  guard! count > 0
+  guard! seed >= 0L
+  guard! distinct >= 1
+  guard! value_len_min >= 1
+  guard! value_len_max >= value_len_min
+  guard! value_len_max <= 255
+  guard! skew >= 1
+  let rng = SplitMix64::new(seed)
+  let span = (value_len_max - value_len_min + 1).to_uint64()
+  let out : Array[Byte] = []
+  push_u32_le(out, distinct)
+  for _ in 0..<distinct {
+    let length = value_len_min + (rng.next() % span).to_int()
+    push_u32_le(out, length)
+    for _ in 0..<length {
+      out.push(b'a' + (rng.next() % 26).to_int().to_byte())
+    }
+  }
+  let catalogue = distinct.to_int64().reinterpret_as_uint64()
+  for _ in 0..<count {
+    let mut z = rng.next()
+    let mut draw = 1
+    while draw < skew {
+      let candidate = rng.next()
+      if candidate < z {
+        z = candidate
+      }
+      draw = draw + 1
+    }
+    let index = ((z >> 32) * catalogue) >> 32
+    push_u32_le(out, index.to_int())
   }
   Bytes::from_array(out)
 }
@@ -171,6 +245,26 @@ pub fn validate(
         fail("dataset.params.payload_max must be at least payload_min")
       }
     }
+    "strings" => {
+      let distinct = int_param(params, "distinct", generator)
+      guard distinct >= 1L && distinct <= 1_000_000L else {
+        fail("dataset.params.distinct must be between 1 and 1000000")
+      }
+      let value_len_min = int_param(params, "value_len_min", generator)
+      let value_len_max = int_param(params, "value_len_max", generator)
+      guard value_len_min >= 1L else {
+        fail("dataset.params.value_len_min must be at least 1")
+      }
+      guard value_len_max >= value_len_min && value_len_max <= 255L else {
+        fail(
+          "dataset.params.value_len_max must be between value_len_min and 255",
+        )
+      }
+      let skew = int_param(params, "skew", generator)
+      guard skew >= 1L && skew <= 8L else {
+        fail("dataset.params.skew must be between 1 and 8")
+      }
+    }
     other => fail("dataset.generator is not implemented by the core: " + other)
   }
 }
@@ -199,6 +293,15 @@ pub fn generate(
         int_param(params, "key_bits", generator),
         int_param(params, "payload_min", generator),
         int_param(params, "payload_max", generator),
+      )
+    "strings" =>
+      strings_bytes(
+        count,
+        seed,
+        int_param(params, "distinct", generator).to_int(),
+        int_param(params, "value_len_min", generator).to_int(),
+        int_param(params, "value_len_max", generator).to_int(),
+        int_param(params, "skew", generator).to_int(),
       )
     // `validate` already rejected every other id.
     other => fail("dataset.generator is not implemented by the core: " + other)

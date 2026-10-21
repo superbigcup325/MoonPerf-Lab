@@ -12,6 +12,8 @@ pub fn params_digest(Map[String, ParamValue]) -> String
 
 pub fn sha256_hex(Bytes) -> String
 
+pub fn strings_bytes(Int32, Int64, Int32, Int32, Int32, Int32) -> Bytes
+
 pub fn structured_records_bytes(Int32, Int64, Int64, Int64, Int64) -> Bytes
 
 pub fn uniform_f64_bytes(Int32, Int64, Double, Double) -> Bytes

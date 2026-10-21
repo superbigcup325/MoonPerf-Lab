@@ -154,3 +154,38 @@ test "structured-records rejects an out-of-range key_bits" {
   }
   inspect(failed, content="true")
 }
+
+///|
+test "strings manifest is parsed" {
+  let text = valid_manifest
+    .replace(old="generator = \"uniform-f64\"", new="generator = \"strings\"")
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="distinct = 64\nvalue_len_min = 4\nvalue_len_max = 12\nskew = 3",
+    )
+  let workload = @manifest.parse_manifest_text("demo-scan", text) catch {
+    _ => abort("strings manifest was rejected")
+  }
+  inspect(workload.dataset.generator, content="strings")
+  inspect(
+    @dataset.param_int(workload.dataset.params, "distinct").unwrap(),
+    content="64",
+  )
+}
+
+///|
+test "strings rejects an inverted length range" {
+  let text = valid_manifest
+    .replace(old="generator = \"uniform-f64\"", new="generator = \"strings\"")
+    .replace(
+      old="min = -1.0\nmax = 1.0",
+      new="distinct = 64\nvalue_len_min = 8\nvalue_len_max = 4\nskew = 3",
+    )
+  let failed = try {
+    ignore(@manifest.parse_manifest_text("demo-scan", text))
+    false
+  } catch {
+    @manifest.ManifestError::Message(_) => true
+  }
+  inspect(failed, content="true")
+}

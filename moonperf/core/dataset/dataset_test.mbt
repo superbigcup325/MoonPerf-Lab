@@ -62,3 +62,21 @@ test "param digest is order independent" {
     content="false",
   )
 }
+
+///|
+test "strings small deterministic bytes" {
+  let data = @dataset.strings_bytes(6, 1L, 4, 3, 5, 2)
+  inspect(
+    @crypto.bytes_to_hex_string(data),
+    content="0400000005000000746f646663030000006c797303000000657979040000006c706273000000000000000000000000000000000000000002000000",
+  )
+}
+
+///|
+test "strings golden hash" {
+  let data = @dataset.strings_bytes(100_000, 20261022L, 10_000, 4, 24, 3)
+  inspect(
+    @dataset.sha256_hex(data),
+    content="76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681",
+  )
+}
