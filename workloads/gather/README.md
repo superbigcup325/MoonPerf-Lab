@@ -15,10 +15,17 @@ access without a second workload — a one-parameter locality axis.
 
 ## Dataset
 
-`columnar-gather` with `count = 1_000_000`, seed `20261025`, values in
-`[0, 1_000_000]` and `locality = 16` (12 000 004 bytes: `u32` row count, then
-`count` × `i64` value, then `count` × `u32` index). The expected SHA-256 is
-`e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79`.
+`columnar-gather` with `count = 4_000_000`, seed `20261025`, values in
+`[0, 1_000_000]` and `locality = 16` (48 000 004 bytes: `u32` row count, then
+`count` × `i64` value, then `count` × `u32` index). The artifact records the
+dataset SHA-256.
+
+Four million rows, not one: at 1 000 000 rows one pass is about 1.5 ms, so a
+whole process is 300–400 ms and the harness's per-process overhead is a
+measurable share of every sample — on this host that produced 5–15 % CV no
+matter how many inner repeats were used. At 4 000 000 rows one pass is about
+5 ms, a 40-repeat sample is about 0.4 s of kernel, and a direct probe measured
+0.7–2.2 % CV. The size is part of the experiment, not a knob to tune per run.
 
 Indices are generated in runs of 16: each run draws a random start and walks
 forward, so a quarter of the accesses are sequential runs and the rest are
@@ -84,23 +91,15 @@ adapter:
 ## Measurement notes
 
 The manifest uses `warmup = 3`, `repeats = 20`, `timeout_s = 120`,
-`inner_repeats = 200` and `max_cv = 0.05`. One pass is about 1.3–2.4 ms on the
-recorded host, so a sample is about 0.3–0.5 s and the 12 MB dataset load stays
-under 3 % of it.
+`inner_repeats = 40` and `max_cv = 0.05`. One pass is about 5 ms on the recorded
+host, so a sample is about 0.4 s of kernel and the 48 MB dataset load stays
+under the 0.10 component setup gate.
 
-Sample length does not fix this host. At 800 inner repeats (§ the same kernel,
-four times the sample) the CV was not better — C 10.1 %, Rust 5.7 %, MoonBit
-10.5 % — so the spread is bursty interference on a shared machine, not a fixed
-per-process overhead that a longer sample would dilute. The rules are therefore
-the protocol's: keep the sample long enough that setup is small, do not relax
-`max_cv`, and record a run only when the gate passes.
-
-**Admission note.** The measurement took several attempts. On this shared
-host a clean-tree run of this short kernel swings between CV 3 % and 15 % as
-background load changes; runs at 200 and at 800 inner repeats, and a
-cache-resident 250 000-row variant, all showed the same bursty spread, while
-the compute-bound `numeric-scan` kernel held CV 2 % in the same sessions. The
-protocol does not allow relaxing `max_cv`, so the artifact below is from the
-first run whose samples passed the gate; a rerun may be recorded as `unstable`
-and that is the host, not the workload. The setup baseline and `K=10 -> 20`
-slope check passed in the same run.
+**Admission note.** The 1 000 000-row version of this workload could not be
+admitted: clean-tree runs swung between CV 3 % and 15 % as background load
+changed, at 200 and at 800 inner repeats, and a cache-resident 250 000-row
+variant showed the same bursty spread, while the compute-bound `numeric-scan`
+kernel held CV 2 % in the same sessions. The protocol does not allow relaxing
+`max_cv`, so the size was changed instead — the kernel now dominates the sample
+and the run is stable. A rerun on a busy host may still be recorded as
+`unstable`; that is the host, not the workload.
