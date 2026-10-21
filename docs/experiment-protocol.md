@@ -121,6 +121,7 @@ Built-in generators (version 1):
 | `structured-records` | 16-byte record | `key_bits` (1–64), `payload_min`, `payload_max` (integers) | Little-endian `u64 key` then `u64 payload`, no header |
 | `strings` | dictionary-encoded column | `distinct` (1–1 000 000), `value_len_min`, `value_len_max` (1–255), `skew` (1–8) | `u32` dictionary size; per entry `u32` byte length plus ASCII bytes; then `count` × `u32` index |
 | `nullable-columns` | nullable integer column | `value_min`, `value_max` (integers, ≥ 0), `null_percent` (0–100) | `u32` row count; `count` × `i64` value; `ceil(count/8)` validity bytes |
+| `columnar-gather` | value column plus an index vector | `value_min`, `value_max` (integers, ≥ 0), `locality` (1–4096) | `u32` row count; `count` × `i64` value; `count` × `u32` index |
 
 `uniform-f64` is defined precisely so that a second implementation of the
 harness can reproduce the bytes. With 64-bit unsigned wraparound arithmetic:
@@ -209,6 +210,30 @@ write_bitmap_bytes()                     # ceil(count / 8) bytes, LSB first
 
 Constraints: `0 <= value_min <= value_max`, `0 <= null_percent <= 100`.
 
+`columnar-gather` is a dense value column plus an index vector into it. It is
+the input for a gather kernel: indirect addressing whose locality is a
+parameter. Values are drawn one per row; indices are drawn one per *run* of
+`locality` rows, and a run walks forward from its start, so `locality = 1` is a
+random gather and a larger value trades random access for sequential runs. The
+generator guarantees `0 <= index < row_count`, so a kernel measures the gather
+rather than an error path.
+
+```
+state = seed
+write_le_u32(count)
+for row in 0..count:
+    state += 0x9E3779B97F4A7C15
+    write_le_i64(value_min + mix(state) mod (value_max - value_min + 1))
+for run_start in 0, locality, 2*locality, ...:
+    run_len = min(locality, count - run_start)
+    state += 0x9E3779B97F4A7C15
+    base = mix(state) mod (count - run_len + 1)
+    for offset in 0..run_len:
+        write_le_u32(base + offset)
+```
+
+Constraints: `0 <= value_min <= value_max`, `1 <= locality <= 4096`.
+
 Golden fixtures, asserted by both the MoonBit core test suite and the Python
 reference in `tests/`:
 
@@ -218,6 +243,7 @@ reference in `tests/`:
 | `structured-records` | count 1 000 000, seed 20261021, key_bits 20, payload 0–1 000 000 | `a0bf64a4d028cc768a1ce138b7b4bf7cd9bd6a57244bd51c5996575682eba13c` |
 | `strings` | count 100 000, seed 20261022, distinct 10 000, lengths 4–24, skew 3 | `76ede39d734ae67e1994654c660d011e57d021d2c3e62be1577496d371116681` |
 | `nullable-columns` | count 100 000, seed 20261023, values 0–1 000 000, 10 % null | `d57afd010d9ac41fb516b2879201971fe1e960c25f6a76afcc31b13de57bda93` |
+| `columnar-gather` | count 1 000 000, seed 20261025, values 0–1 000 000, locality 16 | `e99550ab9f5c8e5d289cdfb90f9ca4303df495a6afc79b106a0b84a5b5361e79` |
 
 Rules:
 
