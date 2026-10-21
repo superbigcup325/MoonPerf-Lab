@@ -1,0 +1,4 @@
+schema_version = 1
+language = "C17"
+summary = "Reference: portable little-endian load into a double array, plain pointer loop, empty-asm memory barrier across repeats; cc -std=c17 -O3 -march=native"
+build_dir = "_build"
