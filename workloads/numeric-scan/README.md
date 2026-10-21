@@ -90,8 +90,10 @@ The manifest uses `warmup = 3`, `repeats = 20`, `inner_repeats = 100`,
 `K = 100` gave CV 1.61 % for Rust and 1.89 % for MoonBit, and setup fractions
 of 3.1 % and 1.3 %, both within the 0.10 micro gate.
 
-The first accepted artifact is from a clean build and a recorded host. Do not
-relax `max_cv` to make a run pass.
+The first accepted artifact is from a clean build and a recorded host. The
+runner also checks `K=1` vs `K=10`; the background component should scale
+about 10×, and a ratio below 5× is flagged as suspected optimizer elimination.
+Do not relax `max_cv` to make a run pass.
 
 ## What would falsify the experiment
 

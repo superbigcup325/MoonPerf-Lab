@@ -301,9 +301,11 @@ and records toolchain and build-log SHA-256 in the artifact. The setup baseline
 is the median of three runs and is recorded with its run count.
 
 **P1.3-B (in progress):** the first `ok` artifact is committed from a
-stable-load run (`K=100`, repeats=20, setup median of three). Still open:
-timeout-as-invalid-artifact, the `K = 1` vs `K = 10` scaling diagnostic, the
-full A1–A17 acceptance suite and CI.
+stable-load run (`K=100`, repeats=20, setup median of three). Timeout now
+writes an `invalid` artifact with `measurement_ok=false` and no samples; the
+`K = 1` vs `K = 10` scaling diagnostic is recorded in the verdict notes and
+fails the verdict below 5×. Still open: the full A1–A17 acceptance suite and
+CI.
 
 - Make MoonBit and Rust load the dataset into the same `f64` representation
   before the kernel.

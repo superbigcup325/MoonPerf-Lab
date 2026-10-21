@@ -450,6 +450,15 @@
             }
           ]
         },
+        "measurement_ok": {
+          "type": "boolean"
+        },
+        "measurement_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "setup": {
           "type": "object",
           "additionalProperties": false,
@@ -489,6 +498,16 @@
                   }
                 }
               }
+            },
+            "not": {
+              "required": [
+                "measurement_ok"
+              ],
+              "properties": {
+                "measurement_ok": {
+                  "const": false
+                }
+              }
             }
           },
           "then": {
@@ -511,6 +530,28 @@
                     "const": false
                   }
                 }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "samples_ns": {
+                "maxItems": 0
+              },
+              "summary": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "measurement_ok"
+            ],
+            "properties": {
+              "measurement_ok": {
+                "const": false
               }
             }
           },

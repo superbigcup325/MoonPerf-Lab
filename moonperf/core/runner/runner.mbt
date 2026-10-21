@@ -6,6 +6,7 @@ priv struct RunState {
   mut correctness : @artifact.CorrectnessRecord
   samples_ns : Array[Int64]
   mut summary : @measure.Summary?
+  mut measurement_error : String?
   mut setup : @artifact.SetupRecord?
 }
 
@@ -410,7 +411,7 @@ async fn run_measurement(
   output_dir : String,
   workload : @manifest.Workload,
   round : Int32,
-) -> Unit {
+) -> String? {
   let output_path = join(
     output_dir,
     state.implementation.id + "-sample-" + round.to_string() + ".json",
@@ -423,22 +424,19 @@ async fn run_measurement(
     workload.measurement.inner_repeats,
     workload.measurement.timeout_s,
   ) catch {
-    error => raise @host.error("measurement run failed: " + error.to_string())
+    error => return Some("measurement run failed: " + error.to_string())
   }
   if result.timed_out {
-    raise @host.error(state.implementation.id + ": measurement timed out")
+    return Some("measurement timed out")
   }
   if result.exit_code != 0 {
-    raise @host.error(
-      state.implementation.id +
-      ": measurement exited " +
-      result.exit_code.to_string(),
-    )
+    return Some("measurement exited " + result.exit_code.to_string())
   }
   let sample_ns = (result.wall_us *
   1000.0 /
   workload.measurement.inner_repeats.to_double()).to_int64()
   state.samples_ns.push(sample_ns)
+  None
 }
 
 ///|
@@ -476,6 +474,35 @@ async fn run_setup_baseline(
     fraction: 0.0,
     runs: walls.length(),
   })
+}
+
+///|
+async fn scaling_wall_ns(
+  state : RunState,
+  dataset_path : String,
+  params_path : String,
+  output_dir : String,
+  workload : @manifest.Workload,
+  repeat : Int32,
+) -> Int64? {
+  let output_path = join(
+    output_dir,
+    state.implementation.id + "-scaling-" + repeat.to_string() + ".json",
+  )
+  let result = adapter_run(
+    state.implementation,
+    dataset_path,
+    params_path,
+    output_path,
+    repeat,
+    workload.measurement.timeout_s,
+  ) catch {
+    _ => return None
+  }
+  if result.timed_out || result.exit_code != 0 {
+    return None
+  }
+  Some((result.wall_us * 1000.0).to_int64())
 }
 
 ///|
@@ -567,6 +594,7 @@ pub async fn run_workload(
       },
       samples_ns: [],
       summary: None,
+      measurement_error: None,
       setup: None,
     })
   }
@@ -631,18 +659,77 @@ pub async fn run_workload(
   for round in 0..<workload.measurement.repeats {
     for index in 0..<valid.length() {
       let rotated = (round + index) % valid.length()
-      run_measurement(
-        valid[rotated],
-        dataset_path,
-        params_path,
-        out_dir,
-        workload,
-        round,
-      )
+      match
+        run_measurement(
+          valid[rotated],
+          dataset_path,
+          params_path,
+          out_dir,
+          workload,
+          round,
+        ) {
+        Some(error) =>
+          if valid[rotated].measurement_error is None {
+            valid[rotated].measurement_error = Some(error)
+          }
+        None => ()
+      }
     }
   }
   for state in valid {
     state.summary = @measure.summarize(state.samples_ns)
+  }
+
+  let scaling_notes : Array[String] = []
+  let mut scaling_failed = false
+  for state in valid {
+    if state.measurement_error is Some(_) {
+      continue
+    }
+    match state.setup {
+      Some(setup) => {
+        let t1 = scaling_wall_ns(
+          state, dataset_path, params_path, out_dir, workload, 1,
+        )
+        let t10 = scaling_wall_ns(
+          state, dataset_path, params_path, out_dir, workload, 10,
+        )
+        match (t1, t10) {
+          (Some(t1), Some(t10)) => {
+            let base = setup.wall_ns.to_double()
+            let ratio = if t1.to_double() > base && t10.to_double() > base {
+              (t10.to_double() - base) / (t1.to_double() - base)
+            } else {
+              0.0
+            }
+            scaling_notes.push(
+              "K scaling " +
+              state.implementation.id +
+              ": K=1 -> 10 ratio " +
+              ratio.to_string(),
+            )
+            if ratio < 5.0 {
+              scaling_notes.push(
+                "optimizer elimination suspected: " + state.implementation.id,
+              )
+              scaling_failed = true
+            }
+          }
+          _ => {
+            scaling_notes.push(
+              "K scaling diagnostic unavailable: " + state.implementation.id,
+            )
+            scaling_failed = true
+          }
+        }
+      }
+      None => {
+        scaling_notes.push(
+          "K scaling needs a setup baseline: " + state.implementation.id,
+        )
+        scaling_failed = true
+      }
+    }
   }
 
   let notes : Array[String] = []
@@ -654,6 +741,12 @@ pub async fn run_workload(
     }
     if !state.correctness.ok {
       notes.push("correctness failed: " + state.implementation.id)
+      verdict_status = "invalid"
+    }
+    if state.measurement_error is Some(error) {
+      notes.push(
+        "measurement failed: " + state.implementation.id + ": " + error,
+      )
       verdict_status = "invalid"
     }
     match state.summary {
@@ -673,6 +766,13 @@ pub async fn run_workload(
         }
       None => ()
     }
+  }
+
+  for note in scaling_notes {
+    notes.push(note)
+  }
+  if scaling_failed {
+    verdict_status = "invalid"
   }
 
   let comparisons : Array[@artifact.ComparisonRecord] = []
@@ -735,6 +835,14 @@ pub async fn run_workload(
       correctness: state.correctness,
       samples_ns: state.samples_ns,
       summary: state.summary,
+      measurement_ok: if state.measurement_error is Some(_) {
+        Some(false)
+      } else if state.correctness.ok {
+        Some(true)
+      } else {
+        None
+      },
+      measurement_error: state.measurement_error,
       setup,
     })
   }

@@ -58,6 +58,8 @@ test "artifact serializes the required shape" {
         },
         samples_ns: [10L, 11L],
         summary: Some(summary),
+        measurement_ok: Some(true),
+        measurement_error: None,
         setup: Some(({ wall_ns: 5L, fraction: 0.05, runs: 1, } : SetupRecord)),
       },
     ],

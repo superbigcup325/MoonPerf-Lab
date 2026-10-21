@@ -70,6 +70,8 @@ pub(all) struct ImplementationRecord {
   correctness : CorrectnessRecord
   samples_ns : Array[Int64]
   summary : @measure.Summary?
+  measurement_ok : Bool?
+  measurement_error : String?
   setup : SetupRecord?
 }
 
@@ -185,6 +187,14 @@ fn implementation_json(implementation : ImplementationRecord) -> Json {
       },
     ),
   ]
+  match implementation.measurement_ok {
+    Some(ok) => entries.push(("measurement_ok", Json::boolean(ok)))
+    None => ()
+  }
+  match implementation.measurement_error {
+    Some(error) => entries.push(("measurement_error", Json::string(error)))
+    None => ()
+  }
   match implementation.setup {
     Some(setup) =>
       entries.push(

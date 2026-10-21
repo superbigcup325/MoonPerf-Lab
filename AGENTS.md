@@ -41,7 +41,7 @@ workloads/numeric-scan/      first workload; MoonBit + Rust drafts
 moonperf/                    MoonBit core: full experiment loop + CLI (P1.3)
 mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
-tests/                       unittest suite for the specification
+tests/                       unittest suite and runner fixtures
 results/                     committed experiment artifacts and reports
 ```
 

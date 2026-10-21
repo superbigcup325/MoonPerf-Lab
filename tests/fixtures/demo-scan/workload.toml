@@ -1,0 +1,30 @@
+schema_version = 1
+name = "demo-scan"
+version = 1
+status = "draft"
+tier = "micro"
+summary = "Runner fixture: one tiny dataset and shell implementations."
+
+[dataset]
+generator = "uniform-f64"
+count = 16
+seed = 1
+
+[dataset.params]
+min = -1.0
+max = 1.0
+
+[params]
+threshold = 0.0
+
+[verify]
+mode = "exact"
+reference = "alpha"
+fields = ["n", "count_above"]
+
+[measurement]
+warmup = 0
+repeats = 2
+timeout_s = 0.2
+inner_repeats = 1
+max_cv = 1.0

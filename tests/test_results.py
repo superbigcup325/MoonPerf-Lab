@@ -153,6 +153,32 @@ class ResultSchemaTest(unittest.TestCase):
         result["experiment"]["harness"] = {"version": "0.1.0"}
         self.assertTrue(validate_instance(result, "result.schema.json"))
 
+    def test_measurement_failure_allows_no_samples(self) -> None:
+        result = valid_result()
+        implementation = result["implementations"][0]
+        implementation["measurement_ok"] = False
+        implementation["measurement_error"] = "measurement timed out"
+        implementation["samples_ns"] = []
+        implementation["summary"] = None
+        result["comparisons"] = []
+        result["verdict"] = {
+            "status": "invalid",
+            "notes": ["measurement failed: rust: measurement timed out"],
+        }
+        self.assertEqual(validate_instance(result, "result.schema.json"), [])
+
+    def test_measurement_failure_with_samples_is_rejected(self) -> None:
+        result = valid_result()
+        implementation = result["implementations"][0]
+        implementation["measurement_ok"] = False
+        implementation["measurement_error"] = "measurement timed out"
+        self.assertTrue(validate_instance(result, "result.schema.json"))
+
+    def test_successful_measurement_marker_is_accepted(self) -> None:
+        result = valid_result()
+        result["implementations"][0]["measurement_ok"] = True
+        self.assertEqual(validate_instance(result, "result.schema.json"), [])
+
     def test_setup_baseline_is_accepted(self) -> None:
         result = valid_result()
         result["implementations"][0]["setup"] = {

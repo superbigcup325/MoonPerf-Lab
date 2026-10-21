@@ -1,6 +1,6 @@
 # MVP specification
 
-**Status:** P1 target, reviewed 2026-10-20. The MoonBit core owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. The first `ok` artifact is committed under `results/numeric-scan/`. Remaining before acceptance: timeout-as-invalid-artifact, the `K=1`/`K=10` scaling diagnostic, the full A1–A17 suite and CI.
+**Status:** P1 target, reviewed 2026-10-20. The MoonBit core owns the full experiment loop: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI. The first `ok` artifact is committed under `results/numeric-scan/`. Timeout-as-invalid-artifact and the `K=1`/`K=10` scaling diagnostic are implemented. Remaining before acceptance: the full A1–A17 suite and CI.
 
 ## Definition
 

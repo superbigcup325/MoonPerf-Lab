@@ -84,6 +84,8 @@ pub(all) struct ImplementationRecord {
   correctness : CorrectnessRecord
   samples_ns : Array[Int64]
   summary : @measure.Summary?
+  measurement_ok : Bool?
+  measurement_error : String?
   setup : SetupRecord?
 }
 

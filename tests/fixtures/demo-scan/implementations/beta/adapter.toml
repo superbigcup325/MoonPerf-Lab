@@ -1,0 +1,3 @@
+schema_version = 1
+language = "Shell"
+summary = "Fixture subject that times out only during measurement."
