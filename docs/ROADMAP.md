@@ -32,7 +32,7 @@ gaps, risks, estimates and the first task.
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0 accepted, P2.1 next | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0 accepted, P2.1 in progress | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -49,7 +49,7 @@ dependency that has not been proven on this toolchain.
 
 | Area | State | Evidence | Gap |
 | --- | --- | --- | --- |
-| Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | The generator interface is still `uniform-f64`-only; P2.1 extends it |
+| Experiment protocol and schemas | Implemented | `docs/experiment-protocol.md`, `schemas/*.json` | String and nullable-column generators are not specified yet; P2.1 adds them |
 | Workload manifest and adapter contract | Implemented | `workloads/numeric-scan/workload.toml` v5; `mpf validate` | `status = active`; accepted artifact |
 | Python bootstrap: list/validate | Implemented | `mpf list`, `mpf validate`; 57 tests | Not the target core |
 | Python bootstrap: run/report | Oracle | `mpf/runner.py`, `mpf/report.py`, `mpf/dataset.py` | Independent cross-check; not the runtime |
@@ -63,7 +63,7 @@ dependency that has not been proven on this toolchain.
 | Controlled measurement host | Partial | `powersave` laptop; latest `ok` artifact: CV 3.62 % C, 3.99 % Rust, 1.90 % MoonBit, all under the 5 % gate | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
 | CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
 | Committed valid artifacts | Implemented | Three `ok` artifacts under `results/numeric-scan/`; the latest (`20261021T055715Z-a47130edbf4b`) has three implementations | One artifact per new workload still missing |
-| Dataset generators | Partial | `uniform-f64` only: `core/dataset` plus a golden SHA in `moon test` | Structured/string/nullable generators are P2.1 |
+| Dataset generators | Partial | Registry in `core/dataset` (`validate`/`generate` by id); `uniform-f64` and `structured-records` with golden hashes on both sides | String and nullable-column generators, and the template, are still P2.1 |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
 | Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
 
@@ -434,7 +434,7 @@ familiarity with MoonBit. Part-time or first-time MoonBit work should plan
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** in progress (2026-10-21). P2.0 is accepted; P2.1 is the next task.
+**Status:** in progress (2026-10-21). P2.0 is accepted; P2.1 is under way.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
@@ -466,26 +466,33 @@ own commit slice.
   0.97. C and Rust agree within 1.5 %, which is inside the sample CV: the
   compiler check adds no gap of its own.
 
-### P2.1 · Generator interface, generators, template (next)
+### P2.1 · Generator interface, generators, template (in progress)
 
-**Status:** not started. This is the first P2.1 task.
+**Status:** in progress (2026-10-21). The interface and `structured-records`
+are done; strings, nullable columns and the authoring template remain.
 
-- Define the generator interface in the protocol: an id plus `(count, seed,
-  params)` produces bytes deterministically, and the artifact records the
-  generator id, its params and the SHA-256 of the bytes. Keep the existing
-  `uniform-f64` id valid; a new generator is a new id, not a redefinition.
-- Add generators in this order: structured records (fixed-width integer key,
-  integer payload), strings (a dictionary with a skewed distribution), nullable
-  columns (values plus a validity bitmap).
-- Prove parity the way `uniform-f64` is proven: a golden SHA-256 in `moon test`
-  and a byte comparison against the Python oracle.
-- Write the workload authoring guide and the template (`workloads/_template/`
-  or an authoring doc plus a fixture), so a new workload is a manifest, a
-  generator id and two adapters.
-- Decide whether a new generator needs `schema_version` 2 or an additive
-  manifest field. Additive is preferred; old artifacts must stay readable.
+- **Done: the generator interface.** `core/dataset` owns a registry
+  (`validate` + `generate`) keyed by generator id, and the manifest carries
+  `[dataset.params]` as a generic scalar map instead of hard-coded
+  `min`/`max`. Adding a generator is a branch in the registry plus a manifest
+  that selects it; the manifest parser and the artifact writer stay agnostic.
+- **Done: `structured-records`.** A flat 16-byte record stream (little-endian
+  `u64` key then `u64` payload), defined in protocol §4 with a golden SHA-256.
+  It is the input the hash-join and gather workloads will use.
+- **Done: parity.** An independent Python reference in
+  `tests/reference_generators.py` reproduces the same bytes, and both sides
+  assert the same golden hashes: `moon test` and 63 Python tests pass. The
+  uniform-f64 golden hash is unchanged, so the refactor did not touch a
+  published dataset.
+- **Done: parameter-scoped dataset cache.** The cache file name includes a
+  digest of the parameters, so two configurations cannot silently reuse each
+  other's bytes.
+- **Next:** a `strings` generator (dictionary with a skewed distribution), a
+  `nullable-columns` generator (values plus a validity bitmap), the workload
+  authoring guide and the template. Then a first workload manifest that uses
+  `structured-records` lands with the hash join in P2.2.
 
-**Deliverable:** three generators with golden hashes, protocol text for the
+**Deliverable:** generators with golden hashes, protocol text for the
 interface, the authoring guide and the template.
 
 ### P2.2 · Hash join (component)
@@ -768,17 +775,18 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Current: P2.1 — the generator interface and the first new generator.** Add a
-generator id to the protocol and the core, generate structured records from
-`(count, seed, params)`, and prove it twice: a golden SHA-256 in `moon test`
-and byte equality with the Python oracle. It is the prerequisite for every P2
-workload, it is verifiable without a host measurement, and it must not touch
-the manifest semantics that published artifacts depend on.
+**Next: the `strings` generator.** Add a dictionary-shaped string column to
+the generator registry: a value distribution with a documented skew, a golden
+SHA-256, and the same two-sided parity proof `structured-records` already has
+(a `moon test` constant and the Python reference in `tests/`). It is the last
+missing input shape for the hash join and the columnar gather workloads, and it
+needs no host measurement.
 
-The P1 tasks are closed: P1.0-A made the oracle produce a green artifact
-(2026-10-20), and P1.1-A generated the dataset in MoonBit with matching bytes
-and SHA-256. P2.0, the C reference, is also done (2026-10-21); see the P2
-section for its evidence.
+The earlier tasks are closed: P1.0-A made the oracle produce a green artifact
+(2026-10-20), P1.1-A generated the dataset in MoonBit with matching bytes, and
+P2.0 added the C reference (2026-10-21). The generator interface and
+`structured-records` landed as the first P2.1 slice; see the P2 section for the
+evidence.
 
 ## Plan revision log
 
@@ -830,3 +838,5 @@ section for its evidence.
 | `workloads/numeric-scan/README.md` | C is an active implementation; fault injection is recorded rather than promised; two artifacts are listed with their medians, CV and setup fractions. | The table said "P2; not an MVP requirement" and the fault fixture was described as missing. |
 | `workloads/README.md` | C17 added to the implementation list; two accepted artifacts. | Stale workload table. |
 | `results/README.md` | The three-implementation artifact is the artifact of record; the two-implementation artifact remains valid. | The results index pointed only at the earlier artifact. |
+| `docs/experiment-protocol.md` | §4 now defines the generator registry, the `structured-records` layout and the golden fixtures; dataset cache naming is specified. | Two generators exist and a third is coming; the contract has to describe both. |
+| `moonperf/README.md` | CLI dataset output includes the generator id; a short section describes the registry. | The interface changed and the example output would have been wrong. |

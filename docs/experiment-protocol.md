@@ -108,11 +108,17 @@ The harness owns data generation. It writes a binary file and records its
 SHA-256, byte size and parameters in the result. Implementations only read the
 file.
 
+A generator is identified by an id. The harness keeps a registry of ids; a
+manifest selects one and supplies its parameters under `[dataset.params]`.
+Adding a generator adds an id and its layout; it never redefines a published
+one.
+
 Built-in generators (version 1):
 
 | Id | Element type | Parameters | Layout |
 | --- | --- | --- | --- |
-| `uniform-f64` | IEEE-754 `f64` | `min`, `max` | Raw little-endian, no header, `count` elements |
+| `uniform-f64` | IEEE-754 `f64` | `min`, `max` (numbers) | Raw little-endian, no header, `count` elements |
+| `structured-records` | 16-byte record | `key_bits` (1–64), `payload_min`, `payload_max` (integers) | Little-endian `u64 key` then `u64 payload`, no header |
 
 `uniform-f64` is defined precisely so that a second implementation of the
 harness can reproduce the bytes. With 64-bit unsigned wraparound arithmetic:
@@ -129,12 +135,42 @@ for i in 0..count:
     write_le_f64(min + (max - min) * u)
 ```
 
+`structured-records` is the input for the join and gather workloads: one key
+column and one integer payload column in a flat stream. It uses the same
+three-step mix (called `mix` below) and advances the state twice per record:
+
+```
+state = seed
+for i in 0..count:
+    state += 0x9E3779B97F4A7C15
+    z = mix(state)
+    key = z >> (64 - key_bits)        # uniform in [0, 2^key_bits); 64 means no shift
+    state += 0x9E3779B97F4A7C15
+    z = mix(state)
+    payload = payload_min + z mod (payload_max - payload_min + 1)
+    write_le_u64(key)
+    write_le_u64(payload)
+```
+
+Constraints: `1 <= key_bits <= 64`, `0 <= payload_min <= payload_max`, and the
+payload span fits in a signed 64-bit integer.
+
+Golden fixtures, asserted by both the MoonBit core test suite and the Python
+reference in `tests/`:
+
+| Generator | Configuration | SHA-256 |
+| --- | --- | --- |
+| `uniform-f64` | count 1 000 000, seed 20261020, min -1, max 1 | `fa49700b3b7bac4b840d944268bdc82291906c703a83a04cc57917c87a0a8fc2` |
+| `structured-records` | count 1 000 000, seed 20261021, key_bits 20, payload 0–1 000 000 | `a0bf64a4d028cc768a1ce138b7b4bf7cd9bd6a57244bd51c5996575682eba13c` |
+
 Rules:
 
 - A generator's algorithm never changes under the same id; a different
   algorithm gets a new id (for example `uniform-f64-v2`).
 - Dataset identity is `(generator, count, seed, params, sha256)`. A hash
   mismatch between the artifact and a regenerated file is a hard failure.
+- The cached dataset file name includes a digest of the parameters, so two
+  configurations with the same generator, count and seed cannot collide.
 - Reading the dataset is part of the measured workload and is identical for
   every implementation. It is not excluded from the timing.
 
