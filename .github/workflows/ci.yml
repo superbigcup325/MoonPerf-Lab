@@ -63,6 +63,7 @@ jobs:
           identity=$(moon run cli --target native -- dataset \
             --manifest ../workloads/numeric-scan \
             --variant tiny --out ../results/tmp/matrix-tiny.bin)
+          echo "variant identity: $identity"
           case "$identity" in
             *'"variant":"tiny"'*'"count":65536'*) ;;
             *) echo "unexpected variant identity: $identity"; exit 1 ;;
