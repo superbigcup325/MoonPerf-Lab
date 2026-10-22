@@ -68,6 +68,16 @@ jobs:
             *'"variant":"tiny"'*'"count":65536'*) ;;
             *) echo "unexpected variant identity: $identity"; exit 1 ;;
           esac
+      - name: Verify the committed result histories
+        working-directory: moonperf
+        run: |
+          for directory in ../results/*/; do
+            workload=$(basename "$directory")
+            if [ "$workload" = "tmp" ]; then
+              continue
+            fi
+            moon run cli --target native -- history "$directory" --check
+          done
       - name: Check the MoonBit adapter
         working-directory: workloads/numeric-scan/implementations/moonbit
         run: |
