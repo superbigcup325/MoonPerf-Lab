@@ -167,10 +167,18 @@ The phase plan is in
 results directory carries a generated `index.json` and `trend.md`
 (`mpf history`), rebuilt from the artifacts and verified by `--check` in CI, so
 every row is one measurement with its commit, host profile, workload version
-and dataset attached. The index is derived data with no aggregate in it — the
-next step is the regression verdict, which chooses a baseline from the same
-host profile and derives its minimum detectable effect from the recorded CV
-instead of a guessed threshold.
+and dataset attached. The index is derived data with no aggregate in it.
+
+The verdict needs a noise model, so it was measured before it was designed:
+60 sequential baseline runs of unchanged code
+([`docs/measurement-noise.md`](docs/measurement-noise.md)) show that absolute
+medians move 5–16 % run to run — a 5 % threshold falsely fires on 8–48 % of
+unchanged pairs depending on the workload — while the ratios the harness already
+computes inside one run move 1.5–5.4 % at `p95`. Identical code and identical
+dataset bytes differ by up to 10.9 % between sessions, so a historical artifact
+is not a baseline. The regression verdict follows from that: same-session
+comparisons only, the ratio as the primary instrument, and a minimum detectable
+effect taken from the measured distribution rather than from a round number.
 
 What exists today:
 
@@ -221,6 +229,7 @@ Implementations under test are separate programs. Details:
 docs/
   experiment-protocol.md       normative protocol: what a valid experiment is
   suite-conclusions.md         what the active suite supports, and what is next
+  measurement-noise.md         run-to-run noise, thresholds and their error rates
   ROADMAP.md                   phases, status, gaps, risks and acceptance
   architecture.md              MoonBit-first target architecture
   mvp.md                       MVP specification and acceptance tests

@@ -714,8 +714,31 @@ model instead of a hunch.
 - No aggregate: the index has no total, rank or score, and an implementation
   without samples records `null` rather than zero.
 
-**Next in P3:** the regression verdict (same profile, same version, MDE from the
-recorded CV), then the re-run path and the false-positive measurement.
+### P3.1a · What the noise actually is
+
+**Status:** **measured 2026-10-22; see [`measurement-noise.md`](measurement-noise.md).**
+
+Three baseline campaigns of 20 sequential runs each (numeric-scan, hash-join,
+gather) measured how much two runs of unchanged code differ:
+
+- Absolute medians move 5–16 % across runs; a 5 % threshold falsely fires on up
+  to 8 % (numeric-scan), 17–27 % (gather) and 37–48 % (hash-join) of unchanged
+  pairs. A constant threshold is not defensible.
+- The same runs' **within-run ratios** (subject / baseline, round-robin) move
+  1.5–5.4 % at `p95` — roughly three times more precise, and free.
+- Identical code and identical dataset bytes differ by 4.9–10.9 % between the
+  2026-10-21 artifacts and the 2026-10-22 campaign. A historical artifact is not
+  a baseline; the ratios absorb most of that drift (0.5–3.7 %), not all of it.
+- The 5 % CV gate rejected 1/20, 6/20 and 6/20 unchanged runs: the stability gate
+  is itself noisy on this host.
+- The end-to-end campaign could not be completed — a busy window (load 4.1) and
+  then a load average of 11 — which is the argument for a designated host before
+  P3 claims a false-positive rate.
+
+**Next in P3:** the regression verdict, now designed against measured numbers:
+paired/same-session baselines only, the ratio as the primary instrument, and an
+MDE taken from the campaign's empirical `p95` rather than from CV alone. Then the
+re-run path and a campaign that spans several windows.
 
 **Deliverables:**
 
@@ -990,6 +1013,15 @@ input matrices and closed the phase.
   re-derives every entry and `mpf validate` compares). Three commits: the core
   and the CLI, the Python validation with its tests, and the generated histories
   with the protocol section.
+
+- **2026-10-22 (P3.1a, noise measured):** ran 60 baseline runs (three workloads
+  x 20, sequential) and wrote [`measurement-noise.md`](measurement-noise.md) with
+  the false-positive rate of candidate thresholds, the within-run ratio's noise,
+  the cross-session drift of identical code, and the stability gate's own
+  false-alarm rate. Added `scripts/measure-baseline.sh` and
+  `scripts/false-positive-rate.py` so the numbers are reproducible; the campaign
+  artifacts stay in `results/tmp/` because they are diagnostics. The end-to-end
+  campaign was abandoned twice on host contention and is recorded as such.
 
 ## Documentation change log (2026-10-20)
 
