@@ -147,14 +147,20 @@ environment, correctness, setup baseline, reproduction command and
 byte-for-byte report regeneration. A clean clone reproduces it, and the remote
 CI run is green. It is one workload on one host, not a language ranking.
 
-**P2 is in progress (started 2026-10-21).** Three steps are in: a C reference
-for `numeric-scan`, a generator registry with four dataset shapes, and the first
-component workload, [`hash-join`](workloads/hash-join/). The suite now covers a
-compute-bound kernel and a memory-access-bound operator, and their numbers do
-not agree: MoonBit is 2.14× the Rust median on `numeric-scan` and within 1.7 %
-on `hash-join`. One workload on one host is not a language verdict — that is
-what makes it worth recording. The next step is the columnar gather; the phase
-plan is in
+**P2 is accepted (2026-10-21).** Four active workloads now cover the three
+tiers: [`numeric-scan`](workloads/numeric-scan/) (micro, compute-bound),
+[`hash-join`](workloads/hash-join/) and [`gather`](workloads/gather/)
+(component, hash table and dependent random loads), and
+[`sql-groupby`](workloads/sql-groupby/) (end-to-end, CSV to one `GROUP BY`
+through hand-written pipelines and through Moonlake 0.3.1). Six dataset
+generators, each with a golden SHA-256 in MoonBit and an independent Python
+reference, and one declared input matrix per workload. Their numbers disagree —
+MoonBit is 2.14× the Rust median on `numeric-scan`, 1.7 % behind on `hash-join`,
+1.99× on `gather` and 1.07× on `sql-groupby` — and that disagreement is the
+result, not a problem with it. One workload on one host is never a language
+verdict: [`docs/suite-conclusions.md`](docs/suite-conclusions.md) records what
+the suite can and cannot conclude, and which workload should be measured next.
+The phase plan is in
 [`docs/ROADMAP.md`](docs/ROADMAP.md#p2--representative-compute-and-data-processing-workloads).
 
 What exists today:
@@ -163,11 +169,14 @@ What exists today:
 | --- | --- |
 | [`docs/experiment-protocol.md`](docs/experiment-protocol.md) | Normative contract for a measurement, from dataset bytes to result artifact |
 | [`schemas/`](schemas/) | JSON Schema for workload manifests, adapters and result artifacts |
-| [`workloads/numeric-scan/`](workloads/numeric-scan/) | First active workload (v5); MoonBit, Rust and C17; two accepted artifacts |
-| [`workloads/hash-join/`](workloads/hash-join/) | First component workload (v1); MoonBit, Rust and C17; accepted artifact and recorded fault injection |
+| [`workloads/numeric-scan/`](workloads/numeric-scan/) | First active workload (v5); MoonBit, Rust and C17; four accepted artifacts |
+| [`workloads/hash-join/`](workloads/hash-join/) | Component workload (v1); MoonBit, Rust and C17; accepted artifact and recorded fault injection |
+| [`workloads/gather/`](workloads/gather/) | Component workload (v1); dependent random loads; accepted artifact and recorded admission failure at 1 M rows |
+| [`workloads/sql-groupby/`](workloads/sql-groupby/) | End-to-end workload (v1); hand-written MoonBit, Rust and C17 plus Moonlake 0.3.1 as an engine path |
 | [`mpf/`](mpf/) | Python bootstrap: `list`, `validate`, and a runner/report draft |
 | [`moonperf/`](moonperf/) | MoonBit core: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI |
-| [`tests/`](tests/) | 57 Python tests for the specification and runner fixtures |
+| [`tests/`](tests/) | 86 Python tests for the specifications, generators and runner fixtures |
+| [`docs/suite-conclusions.md`](docs/suite-conclusions.md) | What the four workloads support, what they cannot, and which workload is next |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases, status, gaps, risks and acceptance |
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
 | [`docs/mvp.md`](docs/mvp.md) | MVP scope, acceptance tests and out-of-scope list |
@@ -201,6 +210,7 @@ Implementations under test are separate programs. Details:
 ```text
 docs/
   experiment-protocol.md       normative protocol: what a valid experiment is
+  suite-conclusions.md         what the active suite supports, and what is next
   ROADMAP.md                   phases, status, gaps, risks and acceptance
   architecture.md              MoonBit-first target architecture
   mvp.md                       MVP specification and acceptance tests
@@ -212,11 +222,13 @@ schemas/
 workloads/
   numeric-scan/                micro workload; MoonBit, Rust, C17
   hash-join/                   component workload; MoonBit, Rust, C17
+  gather/                      component workload; MoonBit, Rust, C17
+  sql-groupby/                 end-to-end workload; MoonBit, Rust, C17, moonlake
 mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
-results/                       committed experiment artifacts (none valid yet)
+results/                       committed experiment artifacts, one directory per workload
 pyproject.toml                 Python bootstrap package
-moonperf/                      MoonBit core: full experiment loop + CLI (P1.2)
+moonperf/                      MoonBit core: full experiment loop + CLI (P1 accepted)
 ```
 
 ## Quick start

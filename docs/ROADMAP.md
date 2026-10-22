@@ -28,11 +28,11 @@ gaps, risks, estimates and the first task.
 
 ## At a glance
 
-| Phase | Outcome | Status (2026-10-20) | Estimate (one developer) |
+| Phase | Outcome | Status (2026-10-21) | Estimate (one developer) |
 | --- | --- | --- | --- |
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
-| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **In progress (2026-10-21)**; P2.0–P2.4 accepted, P2.5 (suite conclusions) next | 3–5 weeks |
+| **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **Accepted (2026-10-21)**; P2.0–P2.5 done | 3–5 weeks |
 | **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
@@ -59,14 +59,14 @@ dependency that has not been proven on this toolchain.
 | Hash-join workload | Implemented | `workloads/hash-join/` v1 active; three implementations; `results/hash-join/20261021T114656Z-b0ff09ba5b87.json`; fault evidence in the README | None |
 | Gather workload | Implemented | `workloads/gather/` v1 active; three implementations; `results/gather/20261021T140344Z-b6d5f9215963.json`; fault evidence in the README | None |
 | SQL group-by workload | Implemented | `workloads/sql-groupby/` v1 active; four implementations including moonlake 0.3.1; `results/sql-groupby/20261021T144852Z-58eace17a9f4.json` | None |
-| MoonBit framework core | Implemented | dataset, manifest, stats, host, verify, artifact, report, runner and CLI; three clean-build artifacts validate | Generator interface and the P2 workloads are the next core work |
-| Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes | Keep the golden test when P2.1 adds generators |
+| MoonBit framework core | Implemented | dataset, manifest (including the declared input matrix), stats, host, verify, artifact, report, runner and CLI; seven clean-build artifacts validate | None; P3 history work is the next core work |
+| Dataset generator parity | Implemented | `moon test` golden SHA + `cmp` against the Python bytes, for all six generators | None |
 | Process-group timeout | Implemented in MoonBit | `core/host` uses `setsid -w` + `kill` group; wired into the runner; orphan and timeout fixtures pass | None |
 | Measurement setup separation | Implemented | median-of-three `--repeat 0` baseline; `setup.fraction` recorded (3.7 %, 3.5 %, 2.0 % in the latest artifact) | None |
-| Controlled measurement host | Partial | `powersave` laptop; latest `ok` artifact: CV 3.62 % C, 3.99 % Rust, 1.90 % MoonBit, all under the 5 % gate | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
+| Controlled measurement host | Partial | `powersave` laptop; every committed `ok` artifact is under the 5 % CV gate (worst 4.16 %) | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
 | CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
-| Committed valid artifacts | Implemented | Four `ok` artifacts: three under `results/numeric-scan/`, one under `results/hash-join/` | Two more workloads are P2.3–P2.4 |
-| Dataset generators | Implemented | Registry in `core/dataset` (`validate`/`generate` by id); four generators with golden hashes on both sides | None |
+| Committed valid artifacts | Implemented | Seven `ok` artifacts: four `numeric-scan`, one each for `hash-join`, `gather` and `sql-groupby` | P3 adds the history index and trend reports |
+| Dataset generators | Implemented | Registry in `core/dataset` (`validate`/`generate` by id); six generators with golden hashes on both sides | None |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
 | Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
 
@@ -437,7 +437,7 @@ familiarity with MoonBit. Part-time or first-time MoonBit work should plan
 
 ## P2 · Representative compute and data-processing workloads
 
-**Status:** in progress (2026-10-21). P2.0–P2.4 are accepted; P2.5 (the suite conclusions and the input matrix) is next.
+**Status:** **accepted 2026-10-21.** P2.0–P2.5 are done.
 
 **Goal:** grow from one calibrated kernel to a small, representative suite that
 can explain Moonlake-like data-processing performance without becoming a
@@ -605,13 +605,34 @@ interface, the authoring guide and the template — all in place.
 
 ### P2.5 · Suite conclusions and the input matrix
 
-**Status:** not started.
+**Status:** **done 2026-10-21.**
 
 - One small input matrix per workload (sizes × distributions), recorded in the
   manifests; no explosion.
 - A note on what the suite can and cannot conclude, and a documented answer to
   "which workload should I measure next?".
 - A committed `ok` artifact per active workload on a controlled host.
+
+**Landed:**
+
+- `[matrix.<name>]` is part of the manifest contract (protocol §4): entries
+  override `count`, `seed` and/or `dataset.params`, carry `probe` or `rejected`
+  status with a one-line reason, stay legal datasets of the same generator and
+  must differ from the recorded configuration. At most 8; an `active` workload
+  declares at least one. The MoonBit core parses and validates them, the schema
+  describes them and `mpf validate` enforces the policy.
+- `dataset --variant <name>` materializes one entry and prints its identity, so
+  an entry is checkable instead of decorative. Nothing sweeps the matrix and no
+  variant becomes an artifact of record: the artifact is what one run measured.
+- Declared matrices: `numeric-scan` (`all-above`, `tiny`), `hash-join`
+  (`few-keys`, `wide-keys`, `small`), `gather` (`scattered`, `sequential`,
+  `small`), `sql-groupby` (`many-groups`, `single-group`, `small`). Each
+  workload README says what the variant separates; the recorded configuration is
+  unchanged, so no version was bumped and every committed artifact stays valid.
+- [`suite-conclusions.md`](suite-conclusions.md) states what the four artifacts
+  support, what they structurally cannot support, and ranks the candidates for
+  the next workload (allocation/strings, a nullable bitmap, threads, an
+  explicit SIMD kernel).
 
 **Deliverables:**
 
@@ -783,6 +804,7 @@ least one external consumer.
 | Reproducibility depends on network | `moon`/`cargo` registry; toolchains | Medium / medium | Pin versions; record; optional vendor/cache; clean-env test | Fresh clone test with recorded steps | P1 |
 | macOS/Windows diverge | `setsid` Linux-only; async supports Linux/macOS | Medium / low | Linux MVP; document unsupported targets | Platform matrix; no claims for untested targets | P1/P2 |
 | Dataset parity | Golden SHA and `cmp` passed on 2026-10-20 | Low | Keep the golden test; re-run if the generator or dependency changes | `moon test`; `cmp` | P1 |
+| The declared input matrix turns into a benchmark matrix | A declarative list is easy to grow and easy to quote from | Medium / medium | At most 8 entries; a `rejected` entry must say why; variants never become artifacts of record; the suite note states it | `mpf validate`; the manifest schema; review | P2 |
 | Invalid artifact reaches results | A scratch artifact was found under `results/` (removed) | Was present / medium | Keep scratch under `results/tmp/`; `results/tmp-*` ignored; validation in CI | Clean tree; CI check | P0 |
 
 ## Project principles
@@ -850,18 +872,20 @@ work. If time is short, deliver P1.0–P1.3 and defer P1.4.
 
 ## First verifiable task
 
-**Next: P2.5, the suite conclusions.** Four workloads now cover the three
-tiers. What P2 still owes is the written answer to "what can this suite
-conclude, and which workload should I measure next?": one small input matrix
-per workload recorded in the manifests, committed artifacts for every active
-workload, and a short note that separates kernel-level findings from
-engine-level ones.
+**P2 is accepted; the next phase is P3.** The suite answers what P2 promised:
+four workloads over the three tiers, a declared input matrix each, a committed
+`ok` artifact each, and a written line between kernel-level findings and the
+engine-level one. [`suite-conclusions.md`](suite-conclusions.md) is the public
+answer to "what can this suite conclude, and which workload should I measure
+next?"; P3 starts with the history index and a noise-aware regression verdict,
+not with a fifth workload.
 
-The earlier tasks are closed: P1.0-A produced a green artifact (2026-10-20),
+The tasks are closed in order: P1.0-A produced a green artifact (2026-10-20),
 P1.1-A generated the dataset in MoonBit with matching bytes, P2.0 added the C
 reference, P2.1 landed the generator registry plus the authoring guide, P2.2
-added the hash join, P2.3 added the gather, and P2.4 added the CSV-to-SQL
-end-to-end path through moonlake's public interface.
+added the hash join, P2.3 added the gather, P2.4 added the CSV-to-SQL
+end-to-end path through moonlake's public interface, and P2.5 declared the
+input matrices and closed the phase.
 
 ## Plan revision log
 
@@ -918,6 +942,16 @@ end-to-end path through moonlake's public interface.
   three-implementation `ok` artifact
   `20261021T055715Z-a47130edbf4b`; sliced P2 into P2.0–P2.5 with P2.1 as the
   next verifiable task.
+- **2026-10-21 (P2.5, accepted — P2 closed):** added the declared input matrix
+  to the manifest contract (`[matrix.<name>]` with `probe`/`rejected` status,
+  merged dataset overrides, generator-rule checking, at most 8 entries and a
+  "must differ from the recorded configuration" rule), enforced by the MoonBit
+  core and `mpf validate`; added `dataset --variant <name>` so an entry is
+  materializable; declared three entries per workload and wrote
+  [`suite-conclusions.md`](suite-conclusions.md) with the cross-workload answer
+  and the ranked next-workload list. No recorded dataset changed, so no workload
+  version was bumped: the CLI reproduces the committed numeric-scan dataset hash
+  byte for byte after the change.
 
 ## Documentation change log (2026-10-20)
 

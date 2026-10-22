@@ -276,6 +276,57 @@ Rules:
 - Reading the dataset is part of the measured workload and is identical for
   every implementation. It is not excluded from the timing.
 
+### The declared input matrix
+
+`[dataset]` is the recorded configuration. A workload may also declare the
+other configurations it was considered at, so the choice and its rejections
+are readable next to the data instead of only in prose:
+
+```toml
+[matrix.scattered]
+status = "probe"
+description = "locality = 1: every index is an independent random access."
+[matrix.scattered.dataset_params]
+locality = 1
+
+[matrix.small]
+status = "rejected"
+description = "The kernel drops below the noise floor; see the admission note."
+count = 1000000
+```
+
+Rules:
+
+- An entry overrides at least one of `count`, `seed` or `dataset_params`;
+  `dataset_params` is merged key by key over `[dataset.params]`. Everything
+  else (the generator, the workload parameters, verification, measurement)
+  comes from the manifest.
+- `status` is `probe` (worth measuring under another condition) or `rejected`
+  (considered and dropped); a rejection states its reason in `description`,
+  which is 1–240 characters.
+- Every entry must remain a legal dataset of the same generator, and must
+  differ from the recorded configuration. The core applies the generator's own
+  parameter rules to the merged dataset.
+- At most 8 entries. A matrix is a documented sensitivity range, not a sweep;
+  if a workload needs more, it is two workloads.
+- Names are identifiers (`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`) and are listed in
+  sorted order.
+
+The matrix is declarative. `moon run cli --target native -- dataset --manifest
+workloads/<name> --variant <variant> --out <file>` materializes one entry and
+prints its identity, which is how an entry is checked; nothing sweeps the
+matrix automatically and a variant never becomes an artifact of record. An
+artifact always records the dataset it actually measured, so a run *is* the
+answer for its own configuration.
+
+Adding or editing an entry does not change the recorded configuration, so it
+does not bump `version`. An artifact keeps the `manifest_sha256` of the bytes
+it ran under; adding entries afterwards is not a reason to invalidate it.
+Replacing the recorded `[dataset]` is a dataset change and does bump `version`.
+
+An `active` workload declares at least one entry: the configurations it was
+considered at are part of what "active" claims. `mpf validate` enforces this.
+
 ## 5. Adapter interface
 
 Each implementation directory contains:
@@ -484,7 +535,9 @@ comparable, ratios may be, and the environment of both sides must be reported.
   it; old artifacts remain valid under their own version.
 - The protocol version and the schema version move together.
 - Workload `version` changes with dataset, params, verification or measurement
-  changes, never with implementation-only changes.
+  changes, never with implementation-only changes. Adding a `[matrix]` entry is
+  not one of those: it documents configurations beside the recorded one without
+  changing it.
 - The harness version is recorded in every artifact; a harness change that
   alters measurement semantics is a protocol change.
 

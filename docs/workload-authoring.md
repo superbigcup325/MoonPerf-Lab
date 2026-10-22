@@ -64,6 +64,7 @@ matter:
 | `status` | `draft` while it is being built, `active` only when every discovered implementation passes the correctness gate and an `ok` artifact is committed, `retired` when it is kept for history. |
 | `tier` | `micro`, `component` or `end-to-end`. |
 | `dataset` | `generator`, `count`, `seed` and the generator's own `[dataset.params]`. |
+| `matrix` | Optional `[matrix.<name>]` entries: the other configurations the workload was considered at. Required once the workload is `active` (protocol §4). |
 | `params` | Workload parameters handed to every implementation as a sorted `key=value` file. |
 | `verify` | `mode`, the compared `fields`, and for tolerance mode `rtol` plus the `reference` implementation id. |
 | `measurement` | `warmup`, `repeats`, `timeout_s`, `inner_repeats`, `max_cv`. |
@@ -92,6 +93,40 @@ in `experiment-protocol.md` §4, add a branch to `validate` and `generate`, and
 prove the bytes twice — a golden SHA-256 in `moon test` and an independent
 Python reference under `tests/`. The algorithm never changes under a published
 id; a new algorithm gets a new id.
+
+### Record the input matrix
+
+The `[dataset]` block is the configuration a committed artifact must measure.
+Beside it, declare the configurations the workload was considered at, so the
+next reader sees the range and the rejections without re-deriving them:
+
+```toml
+[matrix.scattered]
+status = "probe"
+description = "locality = 1: independent random accesses, the worst case."
+[matrix.scattered.dataset_params]
+locality = 1
+
+[matrix.small]
+status = "rejected"
+description = "Kernel below the noise floor; CV 3-22 % in the admission run."
+count = 1000000
+```
+
+A variant overrides `count`, `seed` and/or `dataset_params`; a `rejected` entry
+must say why, and every entry stays a legal dataset of the same generator
+(`mpf validate` and `moon check` both refuse otherwise). Check one entry when
+you want its identity:
+
+```bash
+cd moonperf
+moon run cli --target native -- dataset --manifest ../workloads/<name> \
+  --variant <variant> --out ../results/tmp/<name>-<variant>.bin
+```
+
+Materialized variant bytes stay in `.data/` or `results/tmp/`; they are never
+committed and never become artifacts of record. The matrix is what the workload
+is *declared* to cover, and the artifact is what one run actually answered.
 
 ## Step 4: implement the adapters
 
@@ -160,9 +195,10 @@ moon run cli --target native -- run ../workloads/<name> \
 - [ ] `moon check --deny-warn`, `moon test`, `moon fmt --check` pass.
 - [ ] The workload README states the question, the dataset identity, the
       output fields, the fault-injection evidence and what would falsify the
-      experiment.
-- [ ] `status = "active"` only with a committed `ok` artifact and a passing
-      fault-injection test.
+      experiment, and lists the declared input matrix with the reason for the
+      recorded configuration.
+- [ ] `status = "active"` only with a committed `ok` artifact, a passing
+      fault-injection test and at least one declared matrix entry.
 - [ ] The artifact validates, records the environment and contains the raw
       samples, and its report is byte-identical when regenerated.
 - [ ] No absolute local paths, no dataset bytes, no machine-specific settings.
@@ -176,3 +212,7 @@ Do not add workloads because they are easy. The order in
 is driven by what the suite cannot explain yet: a compute-bound kernel, a
 memory-access-bound operator, and one real data-processing path. If a candidate
 does not close one of those gaps, it is a benchmark, not a workload.
+
+[`suite-conclusions.md`](suite-conclusions.md) keeps the current answer — what
+the four active workloads already cover, what they structurally cannot say, and
+the ranked candidates for the next one.

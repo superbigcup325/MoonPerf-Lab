@@ -39,3 +39,20 @@ repeats = 20
 timeout_s = 120
 inner_repeats = 200
 max_cv = 0.05
+
+# The input matrix: the configurations this workload was considered at, beside
+# the recorded [dataset] above. Required before status = "active"; at most 8
+# entries; a `rejected` entry states why in description; every entry must stay
+# a legal dataset of the same generator and differ from the recorded one.
+# Materialize one with: dataset --manifest <dir> --variant <name> --out FILE
+#
+# [matrix.half]
+# status = "probe"
+# description = "TODO: what changes and which question it answers."
+# count = 500_000
+#
+# [matrix.small]
+# status = "rejected"
+# description = "TODO: why this configuration was dropped."
+# count = 200_000
+
