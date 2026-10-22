@@ -163,6 +163,15 @@ the suite can and cannot conclude, and which workload should be measured next.
 The phase plan is in
 [`docs/ROADMAP.md`](docs/ROADMAP.md#p2--representative-compute-and-data-processing-workloads).
 
+**P3 is in progress (started 2026-10-22).** Results are now tracked: each
+results directory carries a generated `index.json` and `trend.md`
+(`mpf history`), rebuilt from the artifacts and verified by `--check` in CI, so
+every row is one measurement with its commit, host profile, workload version
+and dataset attached. The index is derived data with no aggregate in it — the
+next step is the regression verdict, which chooses a baseline from the same
+host profile and derives its minimum detectable effect from the recorded CV
+instead of a guessed threshold.
+
 What exists today:
 
 | Asset | State |
@@ -177,11 +186,12 @@ What exists today:
 | [`moonperf/`](moonperf/) | MoonBit core: dataset, manifest, statistics, host, verify, runner, artifact, report and CLI |
 | [`tests/`](tests/) | 86 Python tests for the specifications, generators and runner fixtures |
 | [`docs/suite-conclusions.md`](docs/suite-conclusions.md) | What the four workloads support, what they cannot, and which workload is next |
+| [`results/<name>/index.json`](results/numeric-scan/index.json) | Generated per-workload history: one entry per artifact, no aggregate |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Phases, status, gaps, risks and acceptance |
 | [`docs/architecture.md`](docs/architecture.md) | MoonBit-first target architecture and verified capabilities |
 | [`docs/mvp.md`](docs/mvp.md) | MVP scope, acceptance tests and out-of-scope list |
 | [`docs/implementation-boundaries.md`](docs/implementation-boundaries.md) | What belongs in MoonBit core, adapters, host scripts and dependencies |
-| [`results/`](results/) | Accepted `ok` artifacts and generated reports, one directory per workload |
+| [`results/`](results/) | Accepted artifacts, generated reports, and a generated `index.json` plus `trend.md` per workload |
 
 The Python runner draft is **not** an accepted part of the architecture. It is
 kept as an oracle for the MoonBit port. Do not add new experiment features to
@@ -226,7 +236,7 @@ workloads/
   sql-groupby/                 end-to-end workload; MoonBit, Rust, C17, moonlake
 mpf/                           Python bootstrap and temporary oracle
 tests/                         specification and runner tests (Python)
-results/                       committed experiment artifacts, one directory per workload
+results/<name>/                artifacts, generated reports, index.json and trend.md per workload
 pyproject.toml                 Python bootstrap package
 moonperf/                      MoonBit core: full experiment loop + CLI (P1 accepted)
 ```

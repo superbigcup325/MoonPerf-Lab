@@ -39,8 +39,9 @@ moonperf/                         MoonBit module (P1.2; full experiment loop + C
     measure/                      warmup, repeats, samples, statistics, CV
     artifact/                     result model, JSON, structural validation
     report/                       Markdown rendered from an artifact
+    history/                      per-workload index and trend, derived from artifacts
     runner/                       experiment orchestration
-  cli/                            mpf list | validate | run | report
+  cli/                            mpf list | validate | dataset | history | run | report
 
 host/                             optional native helper, only if utilities are
   mpf-host.c                      not enough (Linux MVP uses setsid/kill)
@@ -122,6 +123,7 @@ toolchain versions.
 | Timeout with cancellation | Verified | `@async.with_timeout_opt` | 300 ms timeout returned `None` at ~301 ms |
 | Capture stdout/stderr | Verified | `@process.redirect_to_file` | File capture worked; create a fresh redirect per invocation |
 | Process-group timeout | Implemented in `moonperf/core/host` | `setsid -w` + `kill -KILL -<pid>` | Direct async timeout leaves grandchildren alive; the MoonBit host wrapper kills the group and the orphan test passes. |
+| Result history | Implemented in `moonperf/core/history` | Reads artifacts, derives the host profile, renders `index.json` and `trend.md` | `--check` in CI; the Python oracle re-derives every entry and `mpf validate` compares |
 | SHA-256 | Verified | `moonbitlang/x/crypto` | `@crypto.sha256` + `bytes_to_hex_string`; the 1M-element numeric-scan dataset matches `fa4970…` |
 | JSON Schema validation | **Not yet verified** | Candidate packages only | `colmugx/json-schema`, `moonbitstack/moonschema`; a targeted validator plus a Python cross-check is the fallback |
 | Async concurrency / task groups | API present; not used for measurement | `@async.with_task_group` | Parallel samples would contend for CPU, memory and caches; the MVP runs samples sequentially |

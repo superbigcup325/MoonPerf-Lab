@@ -47,7 +47,7 @@ mpf/                         Python bootstrap and temporary oracle
 host/                        optional native process shim (target; not created)
 scripts/                     reproduction scripts
 tests/                       unittest suite and runner fixtures
-results/                     committed experiment artifacts and reports
+results/<name>/              committed artifacts, generated reports, index and trend
 ```
 
 Adding a workload means adding a directory under `workloads/`; it must not

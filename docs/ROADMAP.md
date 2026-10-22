@@ -33,7 +33,7 @@ gaps, risks, estimates and the first task.
 | **P0 · Audit, feasibility, contract** | Verified capabilities, consistent docs, frozen experiment contract | In place, this revision | 2–3 days (mostly done) |
 | **P1 · Trustworthy MVP** | One reproducible cross-language experiment owned by a MoonBit core | **Accepted (2026-10-21)**; A1–A17 green | 4–5 weeks |
 | **P2 · Representative coverage** | A small suite of compute and data-processing workloads | **Accepted (2026-10-21)**; P2.0–P2.5 done | 3–5 weeks |
-| **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | Not started | 2–3 weeks |
+| **P3 · History, CI, regressions** | Continuous tracking and noise-aware regression detection | **In progress (2026-10-22)**; P3.1 (the history index and trend) is done | 2–3 weeks |
 | **P4 · Profiling and reuse** | Bottleneck attribution and cross-project adoption | Not started; no deadline | 6–10+ weeks |
 
 Estimates assume one developer with the toolchains installed, a working
@@ -65,7 +65,8 @@ dependency that has not been proven on this toolchain.
 | Measurement setup separation | Implemented | median-of-three `--repeat 0` baseline; `setup.fraction` recorded (3.7 %, 3.5 %, 2.0 % in the latest artifact) | None |
 | Controlled measurement host | Partial | `powersave` laptop; every committed `ok` artifact is under the 5 % CV gate (worst 4.16 %) | Still a laptop profile, not a dedicated host; cross-session noise is unmeasured |
 | CI | Implemented | Python spec, MoonBit core/adapter, Rust build, C build with a Rust cross-check, report regeneration and the timeout fixture | No performance claims on shared runners (by design) |
-| Committed valid artifacts | Implemented | Seven `ok` artifacts: four `numeric-scan`, one each for `hash-join`, `gather` and `sql-groupby` | P3 adds the history index and trend reports |
+| Committed valid artifacts | Implemented | Seven `ok` artifacts: four `numeric-scan`, one each for `hash-join`, `gather` and `sql-groupby` | None |
+| Result history index | Implemented | `mpf history` writes `results/<workload>/index.json` and `trend.md`; `--check` in CI; the Python oracle re-derives every entry from the artifacts and `mpf validate` compares them | Regression verdict, MDE and trend-over-time are the rest of P3 |
 | Dataset generators | Implemented | Registry in `core/dataset` (`validate`/`generate` by id); six generators with golden hashes on both sides | None |
 | Reproducibility docs | Implemented | README quick start; `scripts/reproduce-numeric-scan.sh`; protocol §10; clean-clone record | Keep them current as P2 adds workloads |
 | Demo and project history | Implemented | P1 accepted; incremental P2 commits; runnable demo and MoonBit-first ownership matrix | Keep the commit slices reviewable as P2 grows |
@@ -666,7 +667,8 @@ slice).
 
 ## P3 · History, CI and performance regressions
 
-**Status:** not started.
+**Status:** in progress (2026-10-22). P3.1 is done; P3.2 (the regression
+verdict) is next.
 
 **Goal:** make the lab a daily development tool: results are tracked over time,
 correctness runs on every change, and regressions are detected with a noise
@@ -685,6 +687,35 @@ model instead of a hunch.
 - Add a trend report per workload.
 - Add `mpf run --from-artifact` or an equivalent exact re-run path.
 - Measure the false-positive rate over repeated baseline runs.
+
+### P3.1 · Append-only result history and the trend
+
+**Status:** **done 2026-10-22.**
+
+**Landed:**
+
+- `core/history` reduces an artifact to the facts a trend or a comparison needs
+  (workload version, tier, verdict, harness version, manifest hash, commit,
+  branch, host profile, dataset identity, per-implementation median/CV/samples/
+  correctness) and writes two generated files per results directory:
+  `index.json` (validated against `schemas/history.schema.json`) and `trend.md`.
+- `mpf history <results-dir>` builds them; `--check` fails when either is stale,
+  and CI runs it for every results directory. The generated files are committed,
+  so adding an artifact is a reviewable diff.
+- A host profile is a slug of OS, architecture, CPU model, logical CPU count and
+  CPU governor (`linux-x86-64-12th-gen-intel-core-i5-12500h-16c-powersave`);
+  the trend keeps one table per profile because two profiles are not comparable.
+  A workload version is the second boundary: rows from different versions stay
+  visible, marked by a version column, with the reason stated in the footer.
+- The Python oracle re-derives every entry from the artifact it names and
+  `mpf validate` compares the committed index against that derivation, so the
+  mapping is checked from both sides; 11 new tests cover drift, a missing or
+  unindexed artifact, a misnamed directory and schema rejection.
+- No aggregate: the index has no total, rank or score, and an implementation
+  without samples records `null` rather than zero.
+
+**Next in P3:** the regression verdict (same profile, same version, MDE from the
+recorded CV), then the re-run path and the false-positive measurement.
 
 **Deliverables:**
 
@@ -952,6 +983,13 @@ input matrices and closed the phase.
   and the ranked next-workload list. No recorded dataset changed, so no workload
   version was bumped: the CLI reproduces the committed numeric-scan dataset hash
   byte for byte after the change.
+
+- **2026-10-22 (P3.1, result history):** added `core/history` and the `mpf
+  history` command; each results directory now carries a generated `index.json`
+  and `trend.md`, checked from both sides (MoonBit renders, the Python oracle
+  re-derives every entry and `mpf validate` compares). Three commits: the core
+  and the CLI, the Python validation with its tests, and the generated histories
+  with the protocol section.
 
 ## Documentation change log (2026-10-20)
 
