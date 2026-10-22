@@ -74,6 +74,18 @@ pub struct Implementation {
 }
 
 ///|
+/// One declared input-matrix entry: a dataset configuration the workload was
+/// considered at, beside the recorded one in `[dataset]`.
+pub struct MatrixVariant {
+  name : String
+  status : String
+  description : String
+  count : Int32?
+  seed : Int64?
+  dataset_params : Map[String, @dataset.ParamValue]
+}
+
+///|
 pub struct Workload {
   manifest_path : String
   directory : String
@@ -83,6 +95,7 @@ pub struct Workload {
   tier : String
   summary : String?
   dataset : Dataset
+  matrix : Array[MatrixVariant]
   params : Map[String, @toml.TomlValue]
   verify : Verify
   measurement : Measurement
@@ -242,6 +255,33 @@ fn one_of(
 }
 
 ///|
+fn param_value_of(
+  key : String,
+  value : @toml.TomlValue,
+  context : String,
+) -> @dataset.ParamValue raise ManifestError {
+  match value {
+    @toml.TomlInteger(number) => @dataset.ParamValue::Int(number)
+    @toml.TomlFloat(number) => @dataset.ParamValue::Float(number)
+    @toml.TomlString(text) => @dataset.ParamValue::Text(text)
+    _ => fail(context + "." + key + " must be a scalar")
+  }
+}
+
+///|
+fn param_table(
+  table : Map[String, @toml.TomlValue],
+  key : String,
+  context : String,
+) -> Map[String, @dataset.ParamValue] raise ManifestError {
+  let params : Map[String, @dataset.ParamValue] = Map([])
+  for name, value in required_table(table, key, context) {
+    params[name] = param_value_of(name, value, context + "." + key)
+  }
+  params
+}
+
+///|
 fn parse_dataset(
   table : Map[String, @toml.TomlValue],
 ) -> Dataset raise ManifestError {
@@ -254,22 +294,197 @@ fn parse_dataset(
   if seed < 0L {
     fail("dataset.seed must be non-negative")
   }
-  let raw_params = required_table(table, "params", "dataset")
-  let params : Map[String, @dataset.ParamValue] = Map([])
-  for key, value in raw_params {
-    params[key] = match value {
-      @toml.TomlInteger(number) => @dataset.ParamValue::Int(number)
-      @toml.TomlFloat(number) => @dataset.ParamValue::Float(number)
-      @toml.TomlString(text) => @dataset.ParamValue::Text(text)
-      _ => fail("dataset.params." + key + " must be a scalar")
-    }
-  }
+  let params = param_table(table, "params", "dataset")
   // The generator registry owns the per-generator parameter rules, so the
   // manifest stays agnostic about which generators exist.
   @dataset.validate(generator, params) catch {
     @dataset.DatasetError::Message(message) => fail(message)
   }
   { generator, count, seed, params, }
+}
+
+///|
+/// Variants are a small declared set, never a sweep: more than this means the
+/// workload should be split, not multiplied.
+const MAX_MATRIX_VARIANTS : Int32 = 8
+
+///|
+fn same_params(
+  left : Map[String, @dataset.ParamValue],
+  right : Map[String, @dataset.ParamValue],
+) -> Bool {
+  if left.length() != right.length() {
+    return false
+  }
+  for key, value in left {
+    let other = match right.get(key) {
+      Some(other) => other
+      None => return false
+    }
+    let equal = match (value, other) {
+      (@dataset.ParamValue::Int(a), @dataset.ParamValue::Int(b)) => a == b
+      (@dataset.ParamValue::Float(a), @dataset.ParamValue::Float(b)) => a == b
+      (@dataset.ParamValue::Text(a), @dataset.ParamValue::Text(b)) => a == b
+      _ => false
+    }
+    if !equal {
+      return false
+    }
+  }
+  true
+}
+
+///|
+/// Apply one variant's overrides on top of the recorded dataset.
+pub fn apply_variant(dataset : Dataset, variant : MatrixVariant) -> Dataset {
+  let params : Map[String, @dataset.ParamValue] = Map([])
+  for key, value in dataset.params {
+    params[key] = value
+  }
+  for key, value in variant.dataset_params {
+    params[key] = value
+  }
+  {
+    generator: dataset.generator,
+    count: variant.count.unwrap_or(dataset.count),
+    seed: variant.seed.unwrap_or(dataset.seed),
+    params,
+  }
+}
+
+///|
+/// The dataset one declared variant describes, or a failure naming the
+/// variants the manifest does declare.
+pub fn variant_dataset(
+  workload : Workload,
+  name : String,
+) -> Dataset raise ManifestError {
+  let known : Array[String] = []
+  for variant in workload.matrix {
+    known.push(variant.name)
+    if variant.name == name {
+      return apply_variant(workload.dataset, variant)
+    }
+  }
+  if known.length() == 0 {
+    fail(workload.name + ": declares no input matrix")
+  }
+  fail(
+    workload.name +
+    ": unknown variant '" +
+    name +
+    "'; declared: " +
+    known.join(", "),
+  )
+}
+
+///|
+/// The tool accepts `[matrix.<name>]` tables; a variant may override `count`,
+/// `seed` and `dataset.params` (merged key by key over `[dataset.params]`).
+/// Every variant must stay a legal dataset of the same generator and must
+/// differ from the recorded configuration, so the matrix never restates it.
+fn parse_matrix(
+  table : Map[String, @toml.TomlValue],
+  dataset : Dataset,
+) -> Array[MatrixVariant] raise ManifestError {
+  let variants : Array[MatrixVariant] = []
+  let names = table.keys().to_array()
+  names.sort()
+  if names.length() > MAX_MATRIX_VARIANTS {
+    fail(
+      "manifest.matrix may declare at most " +
+      MAX_MATRIX_VARIANTS.to_string() +
+      " variants; split the workload instead of multiplying it",
+    )
+  }
+  for name in names {
+    let context = "matrix." + name
+    if !is_identifier(name) {
+      fail(
+        context + ": variant names must match '^[a-z][a-z0-9]*(-[a-z0-9]+)*$'",
+      )
+    }
+    let entry = table_of(table[name], context)
+    let status = required_string(entry, "status", context)
+    one_of(status, ["probe", "rejected"], context + ".status")
+    let description = required_string(entry, "description", context)
+    if description.length() == 0 || description.length() > 240 {
+      fail(context + ".description must be 1 to 240 characters")
+    }
+    let count = match entry.get("count") {
+      None => None
+      Some(@toml.TomlInteger(number)) => Some(number.to_int())
+      Some(_) => fail(context + ".count must be an integer")
+    }
+    match count {
+      Some(value) => if value <= 0 { fail(context + ".count must be positive") }
+      None => ()
+    }
+    let seed = match entry.get("seed") {
+      None => None
+      Some(@toml.TomlInteger(number)) => Some(number)
+      Some(_) => fail(context + ".seed must be an integer")
+    }
+    match seed {
+      Some(value) =>
+        if value < 0L {
+          fail(context + ".seed must be non-negative")
+        }
+      None => ()
+    }
+    let overrides = match entry.get("dataset_params") {
+      None => (Map([]) : Map[String, @dataset.ParamValue])
+      Some(_) => param_table(entry, "dataset_params", context)
+    }
+    if count == None && seed == None && overrides.length() == 0 {
+      fail(
+        context + " must override at least one of count, seed or dataset_params",
+      )
+    }
+    let variant = {
+      name,
+      status,
+      description,
+      count,
+      seed,
+      dataset_params: overrides,
+    }
+    let effective = apply_variant(dataset, variant)
+    @dataset.validate(dataset.generator, effective.params) catch {
+      @dataset.DatasetError::Message(message) => fail(context + ": " + message)
+    }
+    if effective.count == dataset.count &&
+      effective.seed == dataset.seed &&
+      same_params(effective.params, dataset.params) {
+      fail(context + " must differ from the recorded [dataset] configuration")
+    }
+    variants.push(variant)
+  }
+  variants
+}
+
+///|
+/// Variant names are part of the manifest contract, so the pattern is checked
+/// here rather than delegated to a regular-expression dependency.
+fn is_identifier(text : String) -> Bool {
+  let mut length = 0
+  let mut previous_hyphen = true
+  for character in text {
+    let lower = character >= 'a' && character <= 'z'
+    let digit = character >= '0' && character <= '9'
+    if length == 0 && !lower {
+      return false
+    }
+    if !(lower || digit || character == '-') {
+      return false
+    }
+    if character == '-' && previous_hyphen {
+      return false
+    }
+    previous_hyphen = character == '-'
+    length = length + 1
+  }
+  length > 0 && length <= 64 && !previous_hyphen
 }
 
 ///|
@@ -351,6 +566,10 @@ pub fn parse_manifest_text(
   one_of(tier, ["micro", "component", "end-to-end"], "manifest.tier")
   let summary = optional_string(table, "summary", "manifest")
   let dataset = parse_dataset(required_table(table, "dataset", "manifest"))
+  let matrix = match table.get("matrix") {
+    Some(value) => parse_matrix(table_of(value, "manifest.matrix"), dataset)
+    None => []
+  }
   let params = match table.get("params") {
     Some(value) => table_of(value, "manifest.params")
     None => Map([])
@@ -368,6 +587,7 @@ pub fn parse_manifest_text(
     tier,
     summary,
     dataset,
+    matrix,
     params,
     verify,
     measurement,

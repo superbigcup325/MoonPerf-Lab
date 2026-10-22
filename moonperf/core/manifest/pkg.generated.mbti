@@ -7,6 +7,8 @@ import {
 }
 
 // Values
+pub fn apply_variant(Dataset, MatrixVariant) -> Dataset
+
 pub fn basename(String) -> String
 
 pub async fn discover_implementations(String) -> Array[Implementation] raise ManifestError
@@ -20,6 +22,8 @@ pub async fn load_workload(String) -> Workload raise ManifestError
 pub fn parent(String) -> String
 
 pub fn parse_manifest_text(String, String) -> Workload raise ManifestError
+
+pub fn variant_dataset(Workload, String) -> Dataset raise ManifestError
 
 // Errors
 pub suberror ManifestError {
@@ -40,6 +44,15 @@ pub struct Implementation {
   language : String
   summary : String?
   build_dir : String?
+}
+
+pub struct MatrixVariant {
+  name : String
+  status : String
+  description : String
+  count : Int32?
+  seed : Int64?
+  dataset_params : Map[String, @dataset.ParamValue]
 }
 
 pub struct Measurement {
@@ -67,6 +80,7 @@ pub struct Workload {
   tier : String
   summary : String?
   dataset : Dataset
+  matrix : Array[MatrixVariant]
   params : Map[String, @toml.TomlValue]
   verify : Verify
   measurement : Measurement

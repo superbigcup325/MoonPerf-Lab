@@ -4,7 +4,8 @@ fn usage() -> Unit {
     "usage: mpf <list|validate|dataset|run|report> [options]\n" +
     "  list [root]                         list workloads under root\n" +
     "  validate [path ...]                 validate workloads or manifests\n" +
-    "  dataset --manifest FILE --out FILE  generate a workload dataset\n" +
+    "  dataset --manifest FILE|DIR --out FILE [--variant NAME]\n" +
+    "                                      generate a workload dataset\n" +
     "  run WORKLOAD [--out DIR] [--data-dir DIR] [--repo-root DIR]\n" +
     "  report ARTIFACT [--out FILE] [--repo-root DIR]",
   )
@@ -174,14 +175,22 @@ async fn validate(args : Array[String]) -> Unit {
 async fn dataset(args : Array[String]) -> Unit {
   let manifest = option(args, "--manifest")
   let out = option(args, "--out")
-  let workload = @manifest.load_workload(manifest) catch {
+  let variant = option_or(args, "--variant", "")
+  let workload = @manifest.load_workload(workload_manifest(manifest)) catch {
     @manifest.ManifestError::Message(message) => abort(message)
   }
+  let config = if variant == "" {
+    workload.dataset
+  } else {
+    @manifest.variant_dataset(workload, variant) catch {
+      @manifest.ManifestError::Message(message) => abort(message)
+    }
+  }
   let data = @dataset.generate(
-    workload.dataset.generator,
-    workload.dataset.count,
-    workload.dataset.seed,
-    workload.dataset.params,
+    config.generator,
+    config.count,
+    config.seed,
+    config.params,
   ) catch {
     @dataset.DatasetError::Message(message) => abort(message)
   }
@@ -190,7 +199,7 @@ async fn dataset(args : Array[String]) -> Unit {
   }
   let hash = @dataset.sha256_hex(data)
   println(
-    "{\"name\":\"\{workload.name}\",\"generator\":\"\{workload.dataset.generator}\",\"count\":\{workload.dataset.count},\"seed\":\{workload.dataset.seed},\"sha256\":\"\{hash}\",\"bytes\":\{data.length()}}",
+    "{\"name\":\"\{workload.name}\",\"variant\":\"\{variant}\",\"generator\":\"\{config.generator}\",\"count\":\{config.count},\"seed\":\{config.seed},\"sha256\":\"\{hash}\",\"bytes\":\{data.length()}}",
   )
 }
 

@@ -272,3 +272,168 @@ test "csv-records manifest is parsed" {
     content="16",
   )
 }
+
+///|
+let matrix_manifest : String = valid_manifest +
+  "\n" +
+  (
+    #|[matrix.half]
+    #|status = "probe"
+    #|description = "Half the values, same distribution."
+    #|count = 8
+    #|
+    #|[matrix.half.dataset_params]
+    #|min = 0.0
+    #|
+    #|[matrix.tiny]
+    #|status = "rejected"
+    #|description = "Too short to say anything."
+    #|seed = 7
+  )
+
+///|
+test "input matrix is parsed and merges over the recorded dataset" {
+  let workload = @manifest.parse_manifest_text("demo-scan", matrix_manifest) catch {
+    _ => abort("manifest with a matrix was rejected")
+  }
+  inspect(workload.matrix.length(), content="2")
+  // Names are sorted, so the matrix reads the same in every output.
+  inspect(workload.matrix[0].name, content="half")
+  inspect(workload.matrix[0].status, content="probe")
+  inspect(workload.matrix[1].name, content="tiny")
+  let half = @manifest.variant_dataset(workload, "half") catch {
+    _ => abort("declared variant was not found")
+  }
+  inspect(half.count, content="8")
+  inspect(half.seed, content="1")
+  inspect(@dataset.param_float(half.params, "min").unwrap(), content="0")
+  inspect(@dataset.param_float(half.params, "max").unwrap(), content="1")
+  let tiny = @manifest.variant_dataset(workload, "tiny") catch {
+    _ => abort("declared variant was not found")
+  }
+  inspect(tiny.count, content="16")
+  inspect(tiny.seed, content="7")
+}
+
+///|
+test "unknown variant names are reported with the declared ones" {
+  let workload = @manifest.parse_manifest_text("demo-scan", matrix_manifest) catch {
+    _ => abort("manifest with a matrix was rejected")
+  }
+  let message = try {
+    ignore(@manifest.variant_dataset(workload, "wide"))
+    "no failure"
+  } catch {
+    @manifest.ManifestError::Message(text) => text
+  }
+  inspect(
+    message,
+    content="demo-scan: unknown variant 'wide'; declared: half, tiny",
+  )
+}
+
+///|
+test "a manifest without a matrix declares no variants" {
+  let workload = @manifest.parse_manifest_text("demo-scan", valid_manifest) catch {
+    _ => abort("valid manifest was rejected")
+  }
+  inspect(workload.matrix.length(), content="0")
+  let message = try {
+    ignore(@manifest.variant_dataset(workload, "half"))
+    "no failure"
+  } catch {
+    @manifest.ManifestError::Message(text) => text
+  }
+  inspect(message, content="demo-scan: declares no input matrix")
+}
+
+///|
+fn matrix_failure(block : String) -> String {
+  let text = valid_manifest + "\n" + block
+  try {
+    ignore(@manifest.parse_manifest_text("demo-scan", text))
+    "no failure"
+  } catch {
+    @manifest.ManifestError::Message(message) => message
+  }
+}
+
+///|
+test "a variant must override something" {
+  inspect(
+    matrix_failure(
+      (
+        #|[matrix.empty]
+        #|status = "probe"
+        #|description = "Nothing changes."
+      ),
+    ),
+    content="matrix.empty must override at least one of count, seed or dataset_params",
+  )
+}
+
+///|
+test "a variant must differ from the recorded dataset" {
+  inspect(
+    matrix_failure(
+      (
+        #|[matrix.same]
+        #|status = "probe"
+        #|description = "Same as the recorded configuration."
+        #|count = 16
+        #|seed = 1
+        #|[matrix.same.dataset_params]
+        #|min = -1.0
+        #|max = 1.0
+      ),
+    ),
+    content="matrix.same must differ from the recorded [dataset] configuration",
+  )
+}
+
+///|
+test "a variant must stay a legal dataset of the same generator" {
+  inspect(
+    matrix_failure(
+      (
+        #|[matrix.inverted]
+        #|status = "probe"
+        #|description = "An inverted range is not a uniform-f64 dataset."
+        #|[matrix.inverted.dataset_params]
+        #|min = 1.0
+        #|max = -1.0
+      ),
+    ),
+    content="matrix.inverted: dataset.params.min must be below dataset.params.max",
+  )
+}
+
+///|
+test "variant names must be identifiers" {
+  inspect(
+    matrix_failure(
+      (
+        #|[matrix."Half"]
+        #|status = "probe"
+        #|description = "Upper case is not an identifier."
+        #|count = 8
+      ),
+    ),
+    content="matrix.Half: variant names must match '^[a-z][a-z0-9]*(-[a-z0-9]+)*$'",
+  )
+}
+
+///|
+test "a variant status must be probe or rejected" {
+  inspect(
+    matrix_failure(
+      (
+        #|[matrix.maybe]
+        #|status = "maybe"
+        #|description = "Not a declared status."
+        #|count = 8
+      ),
+    ),
+    content="matrix.maybe.status must be one of probe, rejected, got maybe",
+  )
+}

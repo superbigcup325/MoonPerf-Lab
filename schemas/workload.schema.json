@@ -78,6 +78,18 @@
         }
       }
     },
+    "matrix": {
+      "type": "object",
+      "description": "Optional declared input matrix: the dataset configurations the workload was considered at, beside the recorded one in 'dataset'. Every entry overrides at least one of count, seed or dataset.params (merged key by key over dataset.params) and must stay a legal dataset of the same generator. Adding an entry does not change the recorded configuration; changing the recorded one bumps 'version'.",
+      "maxProperties": 8,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+        "maxLength": 64
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/variant"
+      }
+    },
     "params": {
       "type": "object",
       "additionalProperties": {
@@ -181,6 +193,42 @@
     }
   },
   "$defs": {
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "description"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "probe",
+            "rejected"
+          ],
+          "description": "probe: worth measuring under another condition; rejected: considered and dropped, with the reason in description."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dataset_params": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/scalar"
+          }
+        }
+      }
+    },
     "identifier": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
