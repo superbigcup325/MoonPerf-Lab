@@ -56,6 +56,17 @@ jobs:
       - name: Validate the workloads with the core
         working-directory: moonperf
         run: moon run cli --target native -- validate ../workloads
+      - name: Materialize a declared input-matrix variant
+        working-directory: moonperf
+        run: |
+          mkdir -p ../results/tmp
+          identity=$(moon run cli --target native -- dataset \
+            --manifest ../workloads/numeric-scan \
+            --variant tiny --out ../results/tmp/matrix-tiny.bin)
+          case "$identity" in
+            *'"variant":"tiny"'*'"count":65536'*) ;;
+            *) echo "unexpected variant identity: $identity"; exit 1 ;;
+          esac
       - name: Check the MoonBit adapter
         working-directory: workloads/numeric-scan/implementations/moonbit
         run: |

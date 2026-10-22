@@ -31,6 +31,18 @@ about half of the key space and a probe row matches with probability
 build key can repeat, and two probe rows can share a key. The join is therefore
 many-to-many and must count every matching (build, probe) pair.
 
+### Input matrix
+
+The recorded configuration is `key_bits = 20` at 1 000 000 records, which makes
+the build side roughly one entry per key. The matrix declares the distributions
+the workload was considered at:
+
+| Variant | Status | Configuration | What it separates |
+| --- | --- | --- | --- |
+| `few-keys` | probe | `key_bits = 12` | 4 096 distinct keys, so probes walk long build chains: hash-probe bound instead of cache bound |
+| `wide-keys` | probe | `key_bits = 24` | 16.7 M distinct keys, so most probes miss: the lookup-miss path instead of match processing |
+| `small` | rejected | 200 000 records | a 100 k-entry table fits in L2 and the kernel is short, so the join stops being cache bound |
+
 ## Output and correctness
 
 Implementations write a JSON object with four fields through the adapter

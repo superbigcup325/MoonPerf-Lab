@@ -281,6 +281,53 @@ def _semantic_problems(
             problems.append(
                 "dataset.params.min must be below dataset.params.max"
             )
+
+    problems.extend(_matrix_problems(data))
+    return problems
+
+
+def _matrix_problems(data: dict[str, Any]) -> list[str]:
+    """Cross-check the declared input matrix (protocol section 4).
+
+    The MoonBit core owns the full rules, including that a variant stays a
+    legal dataset of the same generator; this oracle checks the structure the
+    schema cannot express and the repository policy that an active workload
+    documents the configurations it was considered at.
+    """
+
+    problems: list[str] = []
+    matrix = data.get("matrix") or {}
+    dataset = data.get("dataset") or {}
+    if data.get("status") == "active" and not matrix:
+        problems.append(
+            "status is 'active' but the manifest declares no input matrix; "
+            "record the configurations the workload was considered at "
+            "(protocol section 4)"
+        )
+    for name, variant in matrix.items():
+        if not isinstance(variant, dict):  # the schema reports the shape
+            continue
+        overrides = variant.get("dataset_params")
+        if not overrides and "count" not in variant and "seed" not in variant:
+            problems.append(
+                f"matrix.{name}: must override at least one of count, seed "
+                f"or dataset_params"
+            )
+        if str(dataset.get("generator", "")) == "uniform-f64" and overrides:
+            merged = dict(dataset.get("params") or {})
+            merged.update(overrides)
+            low, high = merged.get("min"), merged.get("max")
+            if (
+                isinstance(low, (int, float))
+                and not isinstance(low, bool)
+                and isinstance(high, (int, float))
+                and not isinstance(high, bool)
+                and not low < high
+            ):
+                problems.append(
+                    f"matrix.{name}: merged dataset.params.min must be below "
+                    f"dataset.params.max"
+                )
     return problems
 
 

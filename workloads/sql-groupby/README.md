@@ -35,6 +35,19 @@ id,category,amount
 `id` is the row index, `category` is uniform in `[0, 16)` and `amount` is
 uniform in `[0, 1_000_000]`. Every implementation reads this one file.
 
+### Input matrix
+
+The recorded configuration is 2 000 000 rows with 16 categories: 33 415 933
+bytes of CSV, small enough that the parse still dominates the aggregate and
+large enough that process startup does not. The matrix declares the neighbouring
+shapes:
+
+| Variant | Status | Configuration | What it separates |
+| --- | --- | --- | --- |
+| `many-groups` | probe | `categories = 4096` | the dense aggregate table is full, so grouped writes scatter and the output has 4096 rows: aggregation instead of parsing |
+| `single-group` | probe | `categories = 1` | one accumulator: the parse-and-scan floor of the end-to-end path |
+| `small` | rejected | 200 000 rows | a 3.3 MB table where startup and the page cache dominate the sample |
+
 ## The query and the output
 
 The workload is one fixed statement, so a hand-written pipeline can answer it

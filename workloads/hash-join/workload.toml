@@ -26,3 +26,20 @@ repeats = 20
 timeout_s = 120
 inner_repeats = 20
 max_cv = 0.05
+
+[matrix.few-keys]
+status = "probe"
+description = "key_bits = 12: 4096 distinct keys, so most probes walk a long build chain. The kernel becomes hash-probe bound rather than cache bound, and the checksum moves with it."
+[matrix.few-keys.dataset_params]
+key_bits = 12
+
+[matrix.wide-keys]
+status = "probe"
+description = "key_bits = 24: 16.7M distinct keys, so the build table is mostly unique and most probes miss. Measures the lookup-miss path instead of match processing."
+[matrix.wide-keys.dataset_params]
+key_bits = 24
+
+[matrix.small]
+status = "rejected"
+description = "count = 200000: a 100k-entry table fits in L2 and the kernel is short, so the join stops being cache bound and the samples get noisy."
+count = 200000

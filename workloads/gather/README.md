@@ -34,6 +34,21 @@ materializes the index column without a per-row range check — the question is
 the gather loop, not the cost of an error path. A workload that wants the
 bounds-check cost is a separate implementation id.
 
+### Input matrix
+
+The recorded configuration is `locality = 16` at 4 000 000 rows. The matrix
+declares its neighbours (protocol §4), because the size and the run length are
+what decide whether this workload measures memory latency:
+
+| Variant | Status | Configuration | What it separates |
+| --- | --- | --- | --- |
+| `scattered` | probe | `locality = 1` | every index an independent random access: the worst case, and the widest expected spread between implementations |
+| `sequential` | probe | `locality = 4096` | long forward runs: the floor that isolates index overhead from memory latency |
+| `small` | rejected | 1 000 000 rows | the kernel falls under the noise floor (3–22 % CV in the admission runs), so it cannot answer anything |
+
+The recorded size is the smallest one that held the gate; the recorded run
+length keeps a quarter of the accesses sequential and the rest random.
+
 ## Output and correctness
 
 | Field | Type | Meaning |

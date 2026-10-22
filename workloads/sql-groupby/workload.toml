@@ -27,3 +27,20 @@ repeats = 20
 timeout_s = 120
 inner_repeats = 10
 max_cv = 0.05
+
+[matrix.many-groups]
+status = "probe"
+description = "categories = 4096: the dense aggregate table is full, so grouped writes scatter and the output has 4096 rows. Stresses the aggregation instead of the parse."
+[matrix.many-groups.dataset_params]
+categories = 4096
+
+[matrix.single-group]
+status = "probe"
+description = "categories = 1: one accumulator, so the sample is dominated by CSV parsing and the scan. The floor for the parse side of the end-to-end path."
+[matrix.single-group.dataset_params]
+categories = 1
+
+[matrix.small]
+status = "rejected"
+description = "count = 200000: a 3.3 MB table, so process startup and the page cache dominate the sample. Below the noise gate; the reason the recorded size is 2M."
+count = 200000

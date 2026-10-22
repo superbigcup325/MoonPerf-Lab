@@ -30,3 +30,15 @@ repeats = 20
 timeout_s = 120
 inner_repeats = 200
 max_cv = 0.05
+
+[matrix.all-above]
+status = "probe"
+description = "Uniform [0, 1] instead of [-1, 1]: every value clears the threshold, so the count never falls through. Separates the streaming arithmetic from the branch behaviour of the threshold count."
+[matrix.all-above.dataset_params]
+min = 0.0
+max = 1.0
+
+[matrix.tiny]
+status = "rejected"
+description = "65536 values (512 KiB): the stream fits an L2 cache and the kernel drops far below the noise floor. Measures in-cache arithmetic, not streaming; would change the question."
+count = 65536

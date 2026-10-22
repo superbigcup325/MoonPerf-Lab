@@ -44,6 +44,19 @@ timeout_s = 10
 inner_repeats = 1
 """
 
+MATRIX = """
+[matrix.half]
+status = "probe"
+description = "Half the values."
+count = 8
+"""
+
+EMPTY_VARIANT = """
+[matrix.empty]
+status = "probe"
+description = "Nothing changes."
+"""
+
 
 def _manifest_dict() -> dict:
     return {
@@ -235,6 +248,74 @@ class WorkloadSemanticsTest(unittest.TestCase):
             manifest_path = workload_dir / "workload.toml"
             manifest_path.write_text(
                 MANIFEST.replace('status = "draft"', 'status = "active"'),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SpecError):
+                load_workload(manifest_path)
+
+    def test_active_workload_needs_an_input_matrix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            self._add_implementation(workload_dir)
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST.replace('status = "draft"', 'status = "active"'),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SpecError) as raised:
+                load_workload(manifest_path)
+            self.assertIn("no input matrix", str(raised.exception))
+
+    def test_active_workload_with_an_input_matrix_is_valid(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            self._add_implementation(workload_dir)
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST.replace('status = "draft"', 'status = "active"')
+                + MATRIX,
+                encoding="utf-8",
+            )
+            workload = load_workload(manifest_path)
+            self.assertEqual(sorted(workload.data["matrix"]), ["half"])
+
+    def test_variant_must_override_something(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(MANIFEST + EMPTY_VARIANT, encoding="utf-8")
+            with self.assertRaises(SpecError) as raised:
+                load_workload(manifest_path)
+            self.assertIn("override at least one", str(raised.exception))
+
+    def test_variant_must_stay_a_valid_uniform_f64_dataset(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST
+                + """
+[matrix.inverted]
+status = "probe"
+description = "An inverted range is not a uniform-f64 dataset."
+
+[matrix.inverted.dataset_params]
+min = 1.0
+max = -1.0
+""",
+                encoding="utf-8",
+            )
+            with self.assertRaises(SpecError) as raised:
+                load_workload(manifest_path)
+            self.assertIn("merged dataset.params.min", str(raised.exception))
+
+    def test_variant_shape_is_schema_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workload_dir = self._make_workload(Path(tmp))
+            manifest_path = workload_dir / "workload.toml"
+            manifest_path.write_text(
+                MANIFEST
+                + '[matrix.half]\nstatus = "maybe"\ndescription = "x"\ncount = 8\n',
                 encoding="utf-8",
             )
             with self.assertRaises(SpecError):

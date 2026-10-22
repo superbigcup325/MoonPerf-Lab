@@ -26,3 +26,20 @@ repeats = 20
 timeout_s = 120
 inner_repeats = 40
 max_cv = 0.05
+
+[matrix.scattered]
+status = "probe"
+description = "locality = 1: every index is an independent random access. The worst case for the gather and the reason the component tier exists; expect the widest spread across implementations."
+[matrix.scattered.dataset_params]
+locality = 1
+
+[matrix.sequential]
+status = "probe"
+description = "locality = 4096: long forward runs, so the gather is close to a sequential read. The floor that isolates index overhead from memory latency."
+[matrix.sequential.dataset_params]
+locality = 4096
+
+[matrix.small]
+status = "rejected"
+description = "count = 1000000: the kernel is about 1.5 ms and CV swung 3-22 % regardless of inner repeats (see the P2.3 admission note). Rejected by the noise gate, not by the question."
+count = 1000000

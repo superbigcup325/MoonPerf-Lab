@@ -34,6 +34,17 @@ bytes. The expected SHA-256 for this manifest is
 MoonBit generator must reproduce it byte-for-byte before the experiment is
 accepted.
 
+### Input matrix
+
+The recorded configuration is 1 000 000 `f64` values uniform in `[-1, 1]` with
+`threshold = 0.0`, an 8 MB stream. The matrix declares the shapes it was
+considered at:
+
+| Variant | Status | Configuration | What it separates |
+| --- | --- | --- | --- |
+| `all-above` | probe | `min = 0.0`, `max = 1.0` | every value clears the threshold, so the count never falls through: streaming arithmetic without the branch |
+| `tiny` | rejected | 65 536 values | a 512 KiB stream fits an L2 cache and the kernel drops under the noise floor |
+
 ## Output and correctness
 
 Implementations emit a JSON object with `n`, `sum`, `sumsq`, `min`, `max` and
