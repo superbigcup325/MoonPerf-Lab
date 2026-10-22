@@ -1,11 +1,12 @@
 ///|
 fn usage() -> Unit {
   println(
-    "usage: mpf <list|validate|dataset|run|report> [options]\n" +
+    "usage: mpf <list|validate|dataset|history|run|report> [options]\n" +
     "  list [root]                         list workloads under root\n" +
     "  validate [path ...]                 validate workloads or manifests\n" +
     "  dataset --manifest FILE|DIR --out FILE [--variant NAME]\n" +
     "                                      generate a workload dataset\n" +
+    "  history DIR [--check]              build or verify a results index and trend\n" +
     "  run WORKLOAD [--out DIR] [--data-dir DIR] [--repo-root DIR]\n" +
     "  report ARTIFACT [--out FILE] [--repo-root DIR]",
   )
@@ -251,6 +252,124 @@ async fn run(args : Array[String]) -> Unit {
 }
 
 ///|
+/// Build (or verify) one workload's history from its committed artifacts. The
+/// index and the trend are derived data: this command reads artifacts and writes
+/// two files, and `--check` refuses to write when either is out of date.
+async fn history(args : Array[String]) -> Unit {
+  let mut directory = if args.length() >= 3 && !args[2].has_prefix("--") {
+    args[2]
+  } else {
+    option(args, "--dir")
+  }
+  // A trailing slash is a normal way to name a directory and must not change
+  // the workload name derived from it.
+  while directory.length() > 1 && directory.has_suffix("/") {
+    directory = directory[:directory.length() - 1].to_owned()
+  }
+  let check = args.contains("--check")
+  let workload = @manifest.basename(directory)
+  if workload.length() == 0 || workload == "." || workload == ".." {
+    abort("history: give a workload results directory, got " + directory)
+  }
+  let names = @fs.readdir(directory, sort=true) catch {
+    _ => abort("history: cannot read " + directory)
+  }
+  let entries : Array[@history.Entry] = []
+  for name in names {
+    if !name.has_suffix(".json") || name == "index.json" {
+      continue
+    }
+    let path = @manifest.join(directory, name)
+    let text = @xfs.read_file_to_string(path) catch {
+      _ => abort("history: cannot read " + path)
+    }
+    let parsed = @json.parse(text) catch {
+      _ => abort("history: invalid JSON in " + path)
+    }
+    let artifact = @artifact.from_json(parsed)
+    if artifact.workload_name != workload {
+      abort(
+        "history: " +
+        path +
+        " records workload '" +
+        artifact.workload_name +
+        "', but the directory is '" +
+        workload +
+        "'",
+      )
+    }
+    entries.push(@history.entry(name, artifact))
+  }
+  if entries.length() == 0 {
+    abort("history: no result artifacts under " + directory)
+  }
+  let index = @history.build(workload, entries)
+  let index_text = index.to_json().stringify(indent=2) + "\n"
+  let trend_text = @history.render(index)
+  let index_path = @manifest.join(directory, "index.json")
+  let trend_path = @manifest.join(directory, "trend.md")
+  for
+    pair in [
+      (index_path, index_text, "index"),
+      (trend_path, trend_text, "trend"),
+    ] {
+    let (path, expected, label) = pair
+    if check {
+      let actual = @xfs.read_file_to_string(path) catch {
+        _ =>
+          abort(
+            "history: " +
+            path +
+            " is missing; run `mpf history " +
+            directory +
+            "`",
+          )
+      }
+      if actual != expected {
+        abort(
+          "history: " +
+          label +
+          " is out of date (" +
+          path +
+          "); run `mpf history " +
+          directory +
+          "`",
+        )
+      }
+    } else {
+      @xfs.write_string_to_file(path, expected) catch {
+        _ => abort("history: cannot write " + path)
+      }
+    }
+  }
+  for entry in index.entries {
+    println(
+      "  " +
+      entry.id +
+      "  " +
+      entry.started_at +
+      "  " +
+      entry.verdict +
+      "  v" +
+      entry.workload_version.to_string() +
+      "  " +
+      entry.host_profile,
+    )
+  }
+  if check {
+    println(
+      "history ok: " +
+      entries.length().to_string() +
+      (if entries.length() == 1 { " artifact (" } else { " artifacts (" }) +
+      workload +
+      ")",
+    )
+  } else {
+    println("history " + index_path + " and " + trend_path)
+  }
+}
+
+///|
 async fn report(args : Array[String]) -> Unit {
   let artifact_path = if args.length() >= 3 && !args[2].has_prefix("--") {
     args[2]
@@ -310,6 +429,8 @@ async fn main {
     run(args)
   } else if command == "report" {
     report(args)
+  } else if command == "history" {
+    history(args)
   } else {
     usage()
     abort("unknown command: " + command)

@@ -1,0 +1,60 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "superbigcup325/moonperf/core/history"
+
+import {
+  "superbigcup325/moonperf/core/artifact",
+}
+
+// Values
+pub fn build(String, Array[Entry]) -> Index
+
+pub fn entry(String, @artifact.Artifact) -> Entry
+
+pub fn host_profile(@artifact.EnvironmentRecord) -> String
+
+pub fn render(Index) -> String
+
+pub fn slug(String) -> String
+
+// Errors
+
+// Types and methods
+pub struct Entry {
+  artifact : String
+  id : String
+  started_at : String
+  workload_version : Int32
+  tier : String
+  verdict : String
+  harness_version : String
+  manifest_sha256 : String
+  commit : String
+  branch : String
+  dirty : Bool
+  host_profile : String
+  dataset_generator : String
+  dataset_count : Int32
+  dataset_seed : Int64
+  dataset_sha256 : String
+  implementations : Array[ImplementationPoint]
+}
+
+pub struct ImplementationPoint {
+  id : String
+  language : String
+  reference : Bool
+  median_ns : Double?
+  cv : Double?
+  samples : Int32
+  correctness_ok : Bool
+}
+
+pub struct Index {
+  workload : String
+  entries : Array[Entry]
+}
+pub fn Index::to_json(Self) -> Json
+
+// Type aliases
+
+// Traits

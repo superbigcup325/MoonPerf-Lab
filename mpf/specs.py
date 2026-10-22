@@ -23,6 +23,10 @@ SCHEMA_DIR = REPO_ROOT / "schemas"
 WORKLOADS_DIR = REPO_ROOT / "workloads"
 
 WORKLOAD_MANIFEST = "workload.toml"
+
+# A results/<workload>/index.json is the generated history index, not a result
+# artifact; the two share a directory and must never be confused.
+HISTORY_INDEX = "index.json"
 ADAPTER_MANIFEST = "adapter.toml"
 RUN_SCRIPT = "run.sh"
 BUILD_SCRIPT = "build.sh"
@@ -348,3 +352,141 @@ def validate_result_file(path: Path) -> list[str]:
 def _describe(error: Any) -> str:
     location = ".".join(str(part) for part in error.absolute_path) or "<root>"
     return f"{location}: {error.message}"
+
+
+def _slug(text: str) -> str:
+    """Mirror of the core's `slug`: lowercase alnum runs joined by one hyphen."""
+
+    lowered = text.lower()
+    for mark in ("(r)", "(tm)", "(c)", "(m)"):
+        lowered = lowered.replace(mark, "")
+    out: list[str] = []
+    pending = False
+    for character in lowered:
+        alnum = ("a" <= character <= "z") or ("0" <= character <= "9")
+        if alnum:
+            if pending and out:
+                out.append("-")
+            pending = False
+            out.append(character)
+        else:
+            pending = True
+    return "".join(out)
+
+
+def _host_profile(environment: dict[str, Any]) -> str:
+    """Mirror of the core's `host_profile`; the two must agree byte for byte."""
+
+    cpu = environment.get("cpu") or {}
+    governor = cpu.get("governor") or "unknown"
+    return (
+        f"{_slug(str(environment.get('os', '')))}"
+        f"-{_slug(str(environment.get('arch', '')))}"
+        f"-{_slug(str(cpu.get('model', '')))}"
+        f"-{cpu.get('logical_cpus', 0)}c"
+        f"-{_slug(str(governor))}"
+    )
+
+
+def _expected_entry(artifact: dict[str, Any], name: str) -> dict[str, Any]:
+    """Re-derive one index entry from an artifact, independently of the core."""
+
+    experiment = artifact["experiment"]
+    points = []
+    for implementation in artifact["implementations"]:
+        summary = implementation.get("summary")
+        points.append(
+            {
+                "id": implementation["id"],
+                "language": implementation["language"],
+                "reference": implementation["reference"],
+                "median_ns": None if summary is None else summary["median_ns"],
+                "cv": None if summary is None else summary["cv"],
+                "samples": 0 if summary is None else summary["count"],
+                "correctness": implementation["correctness"]["ok"],
+            }
+        )
+    dataset = experiment["dataset"]
+    source = experiment["source"]
+    return {
+        "artifact": name,
+        "id": experiment["id"],
+        "started_at": experiment["started_at"],
+        "workload_version": experiment["workload"]["version"],
+        "tier": experiment["workload"]["tier"],
+        "verdict": artifact["verdict"]["status"],
+        "harness_version": experiment["harness"]["version"],
+        "manifest_sha256": experiment["workload"]["manifest_sha256"],
+        "source": {
+            "commit": source["commit"],
+            "branch": source["branch"],
+            "dirty": source["dirty"],
+        },
+        "host": {"profile": _host_profile(experiment["environment"])},
+        "dataset": {
+            "generator": dataset["generator"],
+            "count": dataset["count"],
+            "seed": dataset["seed"],
+            "sha256": dataset["sha256"],
+        },
+        "implementations": points,
+    }
+
+
+def validate_history_file(path: Path) -> list[str]:
+    """Validate one ``results/<workload>/index.json``; return violation strings.
+
+    The index is derived data, so this checks both directions: the document
+    against ``history.schema.json``, and the committed entries against what the
+    artifacts in the same directory say. A drifting index is a stale committed
+    file, which ``mpf history`` regenerates.
+    """
+
+    path = Path(path)
+    problems: list[str] = []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"{path}: cannot load history index: {exc}"]
+
+    problems.extend(f"{path}: {error}" for error in validate_instance(data, "history.schema.json"))
+    if problems:
+        return problems
+
+    if data["workload"] != path.parent.name:
+        problems.append(
+            f"{path}: workload '{data['workload']}' must match the results "
+            f"directory '{path.parent.name}'"
+        )
+        return problems
+
+    artifacts = {
+        candidate.name: candidate
+        for candidate in sorted(path.parent.glob("*.json"))
+        if candidate.name != HISTORY_INDEX
+    }
+    indexed = [entry["artifact"] for entry in data["entries"]]
+    if len(set(indexed)) != len(indexed):
+        problems.append(f"{path}: an artifact is indexed more than once")
+    missing = sorted(set(artifacts) - set(indexed))
+    extra = sorted(set(indexed) - set(artifacts))
+    if missing:
+        problems.append(f"{path}: committed artifacts are not indexed: {', '.join(missing)}")
+    if extra:
+        problems.append(f"{path}: indexed artifacts do not exist: {', '.join(extra)}")
+
+    expected = []
+    for name in sorted(artifacts):
+        try:
+            artifact = json.loads(artifacts[name].read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            problems.append(f"{artifacts[name]}: cannot load artifact: {exc}")
+            continue
+        expected.append(_expected_entry(artifact, name))
+    expected.sort(key=lambda entry: (entry["started_at"], entry["artifact"]))
+    if not problems and data["entries"] != expected:
+        problems.append(
+            f"{path}: the index does not match the artifacts; run "
+            f"`moon run cli --target native -- history {path.parent}`"
+        )
+    return problems

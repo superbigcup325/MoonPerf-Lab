@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "workload": "sql-groupby",
+  "entries": [
+    {
+      "artifact": "20261021T144852Z-58eace17a9f4.json",
+      "id": "20261021T144852Z-58eace17a9f4",
+      "started_at": "2026-10-21T14:48:52Z",
+      "workload_version": 1,
+      "tier": "end-to-end",
+      "verdict": "ok",
+      "harness_version": "0.1.1",
+      "manifest_sha256": "d11ad8861c19e3623879e3fd2f04bbf57ac026f420085fa02fbb5925d2939f11",
+      "source": {
+        "commit": "58eace17a9f41c42913711bab06290c2e47a98c2",
+        "branch": "main",
+        "dirty": false
+      },
+      "host": {
+        "profile": "linux-x86-64-12th-gen-intel-core-i5-12500h-16c-powersave"
+      },
+      "dataset": {
+        "generator": "csv-records",
+        "count": 2000000,
+        "seed": 20261026,
+        "sha256": "d397e837ad352e06ec3d306fbe52fca32c98574a0fd3d58e2b06a7b37f45a441"
+      },
+      "implementations": [
+        {
+          "id": "c",
+          "language": "C17",
+          "reference": false,
+          "median_ns": 26532583,
+          "cv": 0.012736938313155479,
+          "samples": 20,
+          "correctness": true
+        },
+        {
+          "id": "rust",
+          "language": "Rust",
+          "reference": true,
+          "median_ns": 27338584.5,
+          "cv": 0.03907544835450497,
+          "samples": 20,
+          "correctness": true
+        },
+        {
+          "id": "moonbit",
+          "language": "MoonBit",
+          "reference": false,
+          "median_ns": 29139280,
+          "cv": 0.011660262486048326,
+          "samples": 20,
+          "correctness": true
+        },
+        {
+          "id": "moonlake",
+          "language": "MoonBit (moonlake)",
+          "reference": false,
+          "median_ns": 160946952,
+          "cv": 0.033313598061269774,
+          "samples": 20,
+          "correctness": true
+        }
+      ]
+    }
+  ]
+}

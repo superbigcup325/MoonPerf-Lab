@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "workload": "gather",
+  "entries": [
+    {
+      "artifact": "20261021T140344Z-b6d5f9215963.json",
+      "id": "20261021T140344Z-b6d5f9215963",
+      "started_at": "2026-10-21T14:03:44Z",
+      "workload_version": 1,
+      "tier": "component",
+      "verdict": "ok",
+      "harness_version": "0.1.1",
+      "manifest_sha256": "d03fefde3d48b2e47697391cf123fe8f23bea65d4ad336bcf6a0fcbccb115c5d",
+      "source": {
+        "commit": "b6d5f9215963315c044244df9cad75cffde3e68b",
+        "branch": "main",
+        "dirty": false
+      },
+      "host": {
+        "profile": "linux-x86-64-12th-gen-intel-core-i5-12500h-16c-powersave"
+      },
+      "dataset": {
+        "generator": "columnar-gather",
+        "count": 4000000,
+        "seed": 20261025,
+        "sha256": "34c20a7b73739ef4941a20ca1a56153e54b93e82445c267c3e4d96607956cbdc"
+      },
+      "implementations": [
+        {
+          "id": "c",
+          "language": "C17",
+          "reference": false,
+          "median_ns": 10109469.5,
+          "cv": 0.020503938671330782,
+          "samples": 20,
+          "correctness": true
+        },
+        {
+          "id": "rust",
+          "language": "Rust",
+          "reference": true,
+          "median_ns": 8314058.5,
+          "cv": 0.03244661700556366,
+          "samples": 20,
+          "correctness": true
+        },
+        {
+          "id": "moonbit",
+          "language": "MoonBit",
+          "reference": false,
+          "median_ns": 16577759,
+          "cv": 0.024931527901701278,
+          "samples": 20,
+          "correctness": true
+        }
+      ]
+    }
+  ]
+}

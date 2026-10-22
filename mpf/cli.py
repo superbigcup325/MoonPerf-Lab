@@ -12,11 +12,13 @@ from mpf import SCHEMA_VERSION, __version__
 from mpf.report import render_report, research_question
 from mpf.runner import RunError, run_workload
 from mpf.specs import (
+    HISTORY_INDEX,
     REPO_ROOT,
     WORKLOADS_DIR,
     SpecError,
     discover_workload_paths,
     load_workload,
+    validate_history_file,
     validate_result_file,
 )
 
@@ -171,11 +173,14 @@ def _validate(raw_paths: Sequence[str], results: Sequence[str]) -> int:
         workload_paths = discover_workload_paths()
 
     if results:
-        result_paths = [Path(raw) for raw in results]
+        given = [Path(raw) for raw in results]
+        result_paths = [path for path in given if path.name != HISTORY_INDEX]
+        index_paths = [path for path in given if path.name == HISTORY_INDEX]
     else:
         result_paths = _committed_results()
+        index_paths = _committed_indexes()
 
-    if not workload_paths and not result_paths:
+    if not workload_paths and not result_paths and not index_paths:
         print("nothing to validate", file=sys.stderr)
         return 1
 
@@ -206,6 +211,16 @@ def _validate(raw_paths: Sequence[str], results: Sequence[str]) -> int:
                 print(f"     {problem}")
         else:
             print(f"ok   {path}")
+
+    for path in index_paths:
+        problems = validate_history_file(path)
+        if problems:
+            failures += 1
+            print(f"FAIL {path}")
+            for problem in problems:
+                print(f"     {problem}")
+        else:
+            print(f"ok   {path} (history)")
 
     return 1 if failures else 0
 
@@ -269,6 +284,17 @@ def _committed_results() -> list[Path]:
     return sorted(
         path
         for path in results_dir.rglob("*.json")
+        if "tmp" not in path.parts and path.name != HISTORY_INDEX
+    )
+
+
+def _committed_indexes() -> list[Path]:
+    results_dir = REPO_ROOT / "results"
+    if not results_dir.is_dir():
+        return []
+    return sorted(
+        path
+        for path in results_dir.rglob(HISTORY_INDEX)
         if "tmp" not in path.parts
     )
 
